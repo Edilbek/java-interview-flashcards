@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Java Basics</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f0e8;
+    --surface: #fffdf9;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --accent: #1e3a8a;
+    --accent-ink: #fff;
+    --soft: #e7eef8;
+    --note: #f6f1e7;
+    --note-ink: #44403c;
+    --good: #14532d;
+    --good-soft: #e8f6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141210;
+      --surface: #1f1c19;
+      --ink: #fafaf9;
+      --muted: #a8a29e;
+      --line: #44403c;
+      --accent: #bfdbfe;
+      --accent-ink: #172554;
+      --soft: #243044;
+      --note: #2a241c;
+      --note-ink: #e7e5e4;
+      --good: #bbf7d0;
+      --good-soft: #143024;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 140px; }
+  a { color: var(--accent); text-decoration: none; }
+  .back { font-size: 14px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .pos { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 8px 0 14px; font-size: 15px; }
+  .bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .seg, .chips { display: flex; gap: 8px; }
+  .seg { margin-bottom: 10px; }
+  .seg button, .chips button, .dock button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .seg button { flex: 1; min-height: 40px; padding: 8px 10px; }
+  .seg button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chips { overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chips button { flex: 0 0 auto; padding: 8px 12px; min-height: 36px; font-size: 14px; }
+  .chips button.active { background: var(--soft); border-color: var(--accent); color: var(--accent); }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px 20px; min-height: 320px; }
+  .kicker { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .mark { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--note); color: var(--note-ink); }
+  h2 { font-size: 24px; line-height: 1.35; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .cue { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  .answer { margin-top: 22px; display: grid; gap: 12px; }
+  .answer p { margin: 0; font-size: 17px; line-height: 1.55; }
+  .body { padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 12px 14px; }
+  .note strong { display: block; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .dock-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+  .dock button { border-radius: 12px; min-height: 48px; padding: 10px 8px; }
+  .dock .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .dock .good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">Все колоды</a>
+  <div class="head">
+    <h1>Java Basics</h1>
+    <div class="pos" id="pos">1 / 1</div>
+  </div>
+  <p class="lead">Класс, доступ, методы и типы. Сначала сформулируй ответ сам.</p>
+  <div class="bar" aria-hidden="true"><span id="fill"></span></div>
+  <div class="seg" id="modes">
+    <button type="button" data-mode="all" class="active">Все</button>
+    <button type="button" data-mode="stuck">Где путался</button>
+    <button type="button" data-mode="open">Ещё не помню</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <article id="card"></article>
+</div>
+<div class="dock">
+  <div class="dock-inner">
+    <button type="button" id="prev">Назад</button>
+    <button type="button" class="primary" id="reveal">Показать ответ</button>
+    <button type="button" id="next">Дальше</button>
+    <div class="row2">
+      <button type="button" class="good" id="yes">Помню</button>
+      <button type="button" id="no">Ещё раз</button>
+    </div>
+  </div>
+</div>
+<script>
+const TOPIC = {"class": "Класс и объект", "access": "Доступ и static", "methods": "Методы", "types": "Типы"};
+const CARDS = [{"id": "class-object", "topic": "class", "stuck": false, "prompt": "Чем класс отличается от объекта?", "answer": "Класс — чертёж: поля и методы. Объект — конкретный экземпляр, созданный через new, он лежит в куче. Account описывает, какие поля есть у счёта. new Account(\"A\", 100_000) создаёт один счёт. Вторым new получится другой объект по тому же чертежу.\n\nКак увидеть: Один класс Account — сколько угодно объектов. Поля у каждого свои. Методы общие, они лежат в описании класса, а не копируются в каждый объект."}, {"id": "field-local", "topic": "class", "stuck": false, "prompt": "Чем поле объекта отличается от локальной переменной?", "answer": "Поле объявлено в классе и живёт внутри объекта в куче, пока объект достижим. Локальная переменная объявлена внутри метода и лежит в кадре этого вызова. Кадр выбрасывается на return. Поле balanceTyiyn переживёт метод debit, локальный amount нет.\n\nКак увидеть: amount в debit — на листе вызова, исчезнет на return. balanceTyiyn — внутри объекта в куче и переживёт метод, если на объект ещё есть ссылка."}, {"id": "constructor", "topic": "class", "stuck": false, "prompt": "Что такое конструктор и чем он не является методом с возвращаемым типом?", "answer": "Конструктор вызывается при new и заполняет новый объект. Его имя совпадает с именем класса, возвращаемого типа у него нет. Account(String id, long balance) не возвращает Account отдельно от самого создания. Обычный метод можно вызвать у уже существующего объекта сколько угодно раз.\n\nКак увидеть: new Account(\"A\", 100) делает две вещи: выделяет объект и сразу вызывает конструктор. Отдельно «создать пустой и потом вызвать конструктор как метод» нельзя."}, {"id": "this-keyword", "topic": "class", "stuck": false, "prompt": "Зачем в конструкторе пишут this.id = id?", "answer": "Параметр и поле называются одинаково. this — ссылка на объект, который сейчас создаётся. this.id — поле объекта, id без this — аргумент конструктора. Без this присваивание попало бы в аргумент, а поле осталось бы пустым.\n\nКак увидеть: Без this одноимённый параметр закрывает поле, и объект останется с null или нулём. Это частая ошибка в конструкторе, когда имена совпадают нарочно."}, {"id": "one-file", "topic": "class", "stuck": false, "prompt": "Почему публичный класс TransferService лежит в файле TransferService.java?", "answer": "Имя публичного класса и имя файла совпадают. В одном файле может быть только один public class. Классы без public рядом с ним допустимы, снаружи пакета их не видно. Точка входа ищет класс по имени файла, которое ты передаёшь команде java.\n\nКак увидеть: Команда java TransferService ищет класс TransferService. Если публичный класс назван иначе, чем файл, компилятор это не пропустит."}, {"id": "package-import", "topic": "class", "stuck": false, "prompt": "Что делают package и import? Это модуль Ruby?", "answer": "package объявляет пространство имён, обычно совпадающее с папкой: package com.mbank.transfer. import позволяет писать короткое имя класса из другого пакета. Методов в класс это не подмешивает. Примесь Ruby через include сюда не входит. Модуль Java, файл module-info.java, отдельно решает, какие пакеты jar открывает наружу.\n\nКак увидеть: import не выполняет код и не добавляет методы, в отличие от include в Ruby. Он только разрешает короткое имя. module-info.java — третья, отдельная вещь: граница jar."}, {"id": "access", "topic": "access", "stuck": false, "prompt": "Кто видит private, публичный член, член без модификатора и protected?", "answer": "private виден только внутри своего класса. public виден отовсюду. Без слова член виден классам того же пакета, это пакетный доступ. protected виден в своём пакете и в наследниках, даже если наследник в другом пакете. Поле баланса держат private, чтобы снаружи его меняли только методы.\n\nКак увидеть: Держи в голове лестницу: private — класс, пакетный доступ — папка, protected — папка и наследники, public — все. Баланс почти всегда private."}, {"id": "static-method", "topic": "access", "stuck": false, "prompt": "Чем статический метод отличается от метода объекта?", "answer": "static принадлежит классу. Его вызывают без объекта: Integer.valueOf(100), main у JVM. Внутри него нет this, полей конкретного счёта он не видит. Метод debit без static вызывается у объекта и меняет именно его баланс.\n\nКак увидеть: В static нельзя написать this.balance: объекта нет. Поэтому main только запускает приложение, а debit живёт на конкретном счёте."}, {"id": "static-field", "topic": "access", "stuck": false, "prompt": "Сколько копий у статического поля?", "answer": "Одна на весь класс, не на каждый объект. Все счета видят одно и то же статическое поле. Поэтому туда не кладут баланс конкретного клиента. Описание класса лежит в Metaspace, сам объект, если статическое поле на него ссылается, всё равно в куче.\n\nКак увидеть: Счётчик «сколько всего счетов создано» может быть static. Баланс клиента — нет, иначе все клиенты делят одну сумму."}, {"id": "final-ref", "topic": "access", "stuck": false, "prompt": "Что запрещает final у локальной переменной и у поля?", "answer": "final запрещает новое присваивание этой ячейке. final Account from = ... нельзя потом направить на другой объект. Поля объекта при этом менять можно: from.debit(100) законен, если метод меняет поле внутри. final на поле id значит, что ссылку на строку id после конструктора не заменят.\n\nКак увидеть: final держит ячейку, не содержимое объекта. Ссылку не перевесить, поля объекта менять можно. Поэтому final Account from всё ещё позволяет from.debit(100)."}, {"id": "final-class-method", "topic": "access", "stuck": false, "prompt": "Что даёт final на классе и на методе?", "answer": "final класс нельзя указать в extends, наследника у него не будет. final метод нельзя заменить в наследнике через override. Это закрывает поведение, на которое уже рассчитывает остальной код. String как раз final.\n\nКак увидеть: String нельзя наследовать, чтобы никто не подменил equals и неизменяемость. final метод фиксирует поведение, на которое уже завязан остальной код."}, {"id": "overload", "topic": "methods", "stuck": false, "prompt": "Что такое перегрузка метода?", "answer": "Несколько методов с одним именем и разными параметрами. debit(long amount) и debit(long amount, String reason) — перегрузка. Какой вызовется, компилятор выбирает по аргументам в месте вызова. Это не замена метода родителя.\n\nКак увидеть: Компилятор выбирает перегрузку в месте вызова по типам аргументов. В рантайме это уже обычный конкретный метод. Путают с override, где выбор тела происходит по объекту в куче."}, {"id": "override", "topic": "methods", "stuck": false, "prompt": "Что такое переопределение и зачем @Override?", "answer": "Наследник объявляет метод с той же сигнатурой, что у родителя, и подставляет своё тело. Вызов через переменную родителя попадёт в метод фактического объекта. @Override просит компилятор проверить, что сигнатура правда совпала. Опечатка в имени без этой пометки создаст второй, новый метод, а старый останется.\n\nКак увидеть: Сигнатура должна совпасть: имя, параметры, совместимый возврат. @Override — страховка. Без неё опечатка тихо создаёт второй метод, а старый продолжает вызываться."}, {"id": "void-return", "topic": "methods", "stuck": false, "prompt": "Что означают void и return?", "answer": "void — метод не отдаёт значение, его вызывают ради действия, как debit. return завершает метод. Если тип не void, return обязан принести значение этого типа. return в void допустим без значения и просто выходит из метода.\n\nКак увидеть: debit — void, его не присваивают. describe возвращает String, без return с этим типом метод не скомпилируется. return в середине void просто выходит раньше конца."}, {"id": "main-signature", "topic": "methods", "stuck": false, "prompt": "Какой метод ищет JVM при запуске java TransferApp?", "answer": "public static void main(String[] args). public, чтобы его можно было вызвать снаружи, static, потому что объекта приложения ещё нет, void, потому что процесс не возвращает объект, String[] args — аргументы командной строки. Имя класса в команде java — это класс, где лежит этот метод.\n\nКак увидеть: Любая другая сигнатура main не станет точкой входа. JVM ищет ровно public static void main(String[]). Имя класса в команде java — это класс с этим методом."}, {"id": "null-npe", "topic": "types", "stuck": false, "prompt": "Что такое null?", "answer": "Пустая ссылка: переменная объектного типа не указывает ни на какой объект в куче. Это не объект и не строка \"null\". Вызов метода у такой переменной бросает NullPointerException. У примитива null не бывает, у long всегда есть число.\n\nКак увидеть: null в ссылке — как отсутствие объекта, не как пустая строка. account.debit при account == null падает сразу, до проверки баланса. У long такого состояния нет."}, {"id": "eight-primitives", "topic": "types", "stuck": false, "prompt": "Какие типы хранят само значение, а не ссылку?", "answer": "byte, short, int, long, float, double, char, boolean. Локальная переменная такого типа лежит в кадре метода как само число. Деньги держат в long в тыйынах или в BigDecimal. double для денег не берут: 0.1 + 0.2 даёт 0.30000000000000004.\n\nКак увидеть: Восемь имён стоит помнить списком. Всё остальное в переменной — ссылка. Деньги: long в тыйынах. double даст копеечную ошибку на 0.1 + 0.2."}, {"id": "wrapper", "topic": "types", "stuck": false, "prompt": "Зачем существуют Integer и Long, если есть int и long?", "answer": "Коллекции и generics принимают только объекты. List<long> не компилируется, нужен List<Long>. Компилятор сам упаковывает число в обёртку и достаёт его обратно. У Integer == сравнивает ссылки, и значения от -128 до 127 берутся из кэша.\n\nКак увидеть: List требует объект, поэтому long становится Long. У обёртки появляется equals и кэш −128..127. В арифметике горячего цикла обёртка лишняя, там оставляют примитив."}, {"id": "array-fixed", "topic": "types", "stuck": false, "prompt": "Чем массив Java отличается от Array в Ruby и от ArrayList?", "answer": "String[] создаётся с фиксированной длиной, добавить элемент сверх неё нельзя. ArrayList внутри держит массив и при нехватке места выделяет новый. Индекса -1, «последний элемент», у обоих нет. Массив тоже объект в куче, даже int[].\n\nКак увидеть: new String[3] — ровно три ячейки, четвёртая не появится. ArrayList при добавлении сверх ёмкости выделяет новый больший массив и копирует ссылки. Отрицательных индексов нет ни там, ни там."}, {"id": "string-immutable", "topic": "types", "stuck": false, "prompt": "Почему говорят, что String неизменяема?", "answer": "После создания символы строки нельзя заменить. toUpperCase и concat возвращают новый объект, старый остаётся прежним. Поэтому строку безопасно держать ключом HashMap: hashCode не съедет. Литералы \"mbank\" ещё и попадают в пул, одинаковые литералы — один объект.\n\nКак увидеть: s.concat(\"x\") не меняет s, пока ты не напишешь s = s.concat(\"x\"). Старый объект остаётся. Поэтому ключ HashMap из String не портится после put."}, {"id": "eq-vs-equals", "topic": "types", "stuck": false, "prompt": "Что сравнивает == у примитива и у объекта?", "answer": "У примитива == сравнивает само число. У объекта == сравнивает ссылки: один ли это объект в куче. Совпадение значения спрашивают через equals. Строки и счета сравнивают equals, если важно содержимое, а не факт, что это та же ссылка.\n\nКак увидеть: Два new Account(\"A\") — == ложь, это разные объекты. equals по id может быть истиной. Для int == всегда про число, объекта нет."}, {"id": "var-local", "topic": "types", "stuck": false, "prompt": "Что выводит var и где его нельзя поставить?", "answer": "var у локальной переменной значит: тип возьми у выражения справа. var accounts = new ArrayList<Account>() — это ArrayList<Account>. Поле класса, параметр и ситуацию без правой части var не описывает. Это по-прежнему статическая проверка компилятором, не динамический тип Ruby.\n\nКак увидеть: var account = new Account(\"A\", 1) — тип Account, его вывел компилятор. Это не динамическая переменная Ruby: справа тип обязан быть ясен, поле класса так не объявляют."}, {"id": "interface-intro", "topic": "types", "stuck": false, "prompt": "Что обязан сделать класс, который пишет implements AccountRepository?", "answer": "Реализовать все методы интерфейса без тела. Интерфейс задаёт договор, объект по нему создать нельзя. Один класс может реализовать несколько интерфейсов. С Java 8 у интерфейса бывает default-метод с телом, его класс получает, если не заменит своим.\n\nКак увидеть: implements — обещание реализовать методы. Объект типа интерфейса создать нельзя, можно создать класс, который его выполнил. default-метод добавляет готовое тело, класс может его заменить."}, {"id": "abstract-intro", "topic": "types", "stuck": false, "prompt": "Чем абстрактный класс отличается от обычного?", "answer": "Абстрактный класс может содержать методы без тела и обычные методы с телом, а также поля. new по нему не вызывают. Наследник обязан реализовать абстрактные методы, иначе он тоже остаётся абстрактным. В отличие от интерфейса, класс наследует только один такой родитель.\n\nКак увидеть: Абстрактный класс — незаконченный чертёж с полями и частью методов. Его наследуют и дописывают. Интерфейсов у класса много, такой родитель — один."}, {"id": "enum-status", "topic": "types", "stuck": false, "prompt": "Когда вместо строк берут enum?", "answer": "Когда значений заведомо конечный набор: статус перевода POSTED, REJECTED, а не произвольный текст. Компилятор не даст присвоить постороннюю строку. У enum есть имя и порядковый номер, сравнивать такие константы можно через ==, потому что каждая константа — один объект.\n\nКак увидеть: Строка \"posted\" легко превращается в \"Posted\" и ломает сравнение. Enum оставляет только названные константы, опечатка не компилируется. Каждая константа — один объект, их сравнивают ==."}, {"id": "record-intro", "topic": "types", "stuck": false, "prompt": "Что собирает record AccountKey(String id)?", "answer": "Неизменяемый носитель данных. Компилятор пишет конструктор, equals, hashCode и toString по компонентам. Для ключа счёта этого достаточно, свой hashCode писать не нужно. record не заменяет сервис с поведением, это данные.\n\nКак увидеть: Для ключа или запроса REST record снимает ручной конструктор, equals и hashCode. Поведение перевода в record не кладут: это носитель полей, не сервис."}, {"id": "throw-catch", "topic": "methods", "stuck": false, "prompt": "Что происходит в момент throw?", "answer": "Создаётся объект исключения и выполнение поднимается по кадрам, пока не найдётся catch на этот тип или его родителя. Кадры без catch снимаются. finally выполняется при любом выходе из try. Ближайший аналог в Ruby: raise, rescue, ensure.\n\nКак увидеть: throw поднимается по листам стека. catch с типом IllegalStateException поймает и его наследников. finally отработает и если поймали, и если исключение ушло выше."}, {"id": "try-with-resources", "topic": "methods", "stuck": false, "prompt": "Зачем ресурс объявляют в скобках try?", "answer": "try (var reader = Files.newBufferedReader(path)) сам вызовет close(), когда блок закончится, в том числе из-за исключения. Класс ресурса реализует AutoCloseable. Раньше закрытие писали в finally, его легко было пропустить.\n\nКак увидеть: Скобки try — место, где ресурс точно закроют. Забыть close() в finally на соединении с базой значит держать его до таймаута пула. AutoCloseable как раз для этого."}, {"id": "pass-value", "topic": "methods", "stuck": false, "prompt": "Что именно копируется в параметр метода, если передали Account?", "answer": "Копируется значение переменной. Для объекта значение — ссылка, поэтому в методе лежит вторая ячейка с тем же адресом. Поля объекта менять видно снаружи. Присваивание account = new Account(...) меняет только ячейку на кадре метода, переменная вызывающего остаётся на старом объекте.\n\nКак увидеть: Поля меняются, переменная вызывающего — нет. account.balance = 0 видно снаружи. account = new Account(\"Z\", 0) снаружи не видно. Это один факт про копию ссылки."}];
+const KEY = "java-basics-known-v2";
+let mode = "all", topic = "all", index = 0, revealed = false;
+let known = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+const chips = document.getElementById("chips");
+chips.innerHTML = '<button type="button" data-topic="all" class="active">Все темы</button>' +
+  Object.entries(TOPIC).map(([value, label]) => `<button type="button" data-topic="${value}">${label}</button>`).join("");
+function save() { localStorage.setItem(KEY, JSON.stringify([...known])); }
+function filtered() {
+  return CARDS.filter(card => {
+    if (mode === "stuck" && !card.stuck) return false;
+    if (mode === "open" && known.has(card.id)) return false;
+    if (topic !== "all" && card.topic !== topic) return false;
+    return true;
+  });
+}
+function escapeHtml(value) {
+  return value.replace(/[&<>]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[ch]));
+}
+function answerBlocks(text) {
+  return text.split(/\n\n+/).map(part => {
+    if (part.startsWith("Как увидеть:")) {
+      return `<div class="note"><strong>Как увидеть</strong>${escapeHtml(part.slice("Как увидеть:".length).trim())}</div>`;
+    }
+    return `<p class="body">${escapeHtml(part)}</p>`;
+  }).join("");
+}
+function render() {
+  const list = filtered();
+  const knownCount = CARDS.filter(c => known.has(c.id)).length;
+  document.getElementById("fill").style.width = (CARDS.length ? (knownCount / CARDS.length * 100) : 0) + "%";
+  document.querySelectorAll("[data-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+  document.querySelectorAll("[data-topic]").forEach(btn => btn.classList.toggle("active", btn.dataset.topic === topic));
+  const root = document.getElementById("card");
+  if (!list.length) {
+    root.innerHTML = "<p class='empty'>В этом фильтре карточек нет. Выбери «Все» или сними «Ещё не помню».</p>";
+    document.getElementById("pos").textContent = "0";
+    return;
+  }
+  if (index >= list.length) index = 0;
+  const card = list[index];
+  document.getElementById("pos").textContent = `${index + 1} / ${list.length}`;
+  const flag = card.stuck ? "<span class='mark'>разбирали отдельно</span>" : "";
+  const knownMark = known.has(card.id) ? "<span class='mark'>помню</span>" : "";
+  const body = revealed
+    ? `<div class="answer">${answerBlocks(card.answer)}</div>`
+    : `<p class="cue">Закрой ответ в голове. Если можешь объяснить вслух, нажимай «Помню».</p>`;
+  root.innerHTML = `<div class="kicker">${escapeHtml(TOPIC[card.topic])}${flag}${knownMark}</div><h2>${escapeHtml(card.prompt)}</h2>${body}`;
+  document.getElementById("reveal").textContent = revealed ? "Скрыть ответ" : "Показать ответ";
+}
+function go(delta) {
+  const list = filtered();
+  if (!list.length) return;
+  index = (index + delta + list.length) % list.length;
+  revealed = false;
+  render();
+}
+document.getElementById("reveal").onclick = () => { revealed = !revealed; render(); };
+document.getElementById("yes").onclick = () => {
+  const list = filtered();
+  const card = list[index];
+  if (!card) return;
+  known.add(card.id); save(); revealed = false;
+  if (mode === "open") { if (index >= filtered().length) index = 0; render(); return; }
+  go(1);
+};
+document.getElementById("no").onclick = () => {
+  const card = filtered()[index];
+  if (!card) return;
+  known.delete(card.id); save(); go(1);
+};
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+document.getElementById("modes").onclick = (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn) return;
+  mode = btn.dataset.mode; index = 0; revealed = false; render();
+};
+chips.onclick = (event) => {
+  const btn = event.target.closest("[data-topic]");
+  if (!btn) return;
+  topic = btn.dataset.topic; index = 0; revealed = false; render();
+};
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SOLID</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f0e8;
+    --surface: #fffdf9;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --accent: #1e3a8a;
+    --accent-ink: #fff;
+    --soft: #e7eef8;
+    --note: #f6f1e7;
+    --note-ink: #44403c;
+    --good: #14532d;
+    --good-soft: #e8f6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141210;
+      --surface: #1f1c19;
+      --ink: #fafaf9;
+      --muted: #a8a29e;
+      --line: #44403c;
+      --accent: #bfdbfe;
+      --accent-ink: #172554;
+      --soft: #243044;
+      --note: #2a241c;
+      --note-ink: #e7e5e4;
+      --good: #bbf7d0;
+      --good-soft: #143024;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 140px; }
+  a { color: var(--accent); text-decoration: none; }
+  .back { font-size: 14px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .pos { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 8px 0 14px; font-size: 15px; }
+  .bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .seg, .chips { display: flex; gap: 8px; }
+  .seg { margin-bottom: 10px; }
+  .seg button, .chips button, .dock button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .seg button { flex: 1; min-height: 40px; padding: 8px 10px; }
+  .seg button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chips { overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chips button { flex: 0 0 auto; padding: 8px 12px; min-height: 36px; font-size: 14px; }
+  .chips button.active { background: var(--soft); border-color: var(--accent); color: var(--accent); }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px 20px; min-height: 320px; }
+  .kicker { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .mark { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--note); color: var(--note-ink); }
+  h2 { font-size: 24px; line-height: 1.35; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .cue { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  .answer { margin-top: 22px; display: grid; gap: 12px; }
+  .answer p { margin: 0; font-size: 17px; line-height: 1.55; }
+  .body { padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 12px 14px; }
+  .note strong { display: block; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .dock-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+  .dock button { border-radius: 12px; min-height: 48px; padding: 10px 8px; }
+  .dock .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .dock .good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">Все колоды</a>
+  <div class="head">
+    <h1>SOLID</h1>
+    <div class="pos" id="pos">1 / 1</div>
+  </div>
+  <p class="lead">Пять букв на сервисе перевода: определение, нарушение и как узнать букву. Сначала сформулируй ответ сам.</p>
+  <div class="bar" aria-hidden="true"><span id="fill"></span></div>
+  <div class="seg" id="modes">
+    <button type="button" data-mode="all" class="active">Все</button>
+    <button type="button" data-mode="stuck">Где путался</button>
+    <button type="button" data-mode="open">Ещё не помню</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <article id="card"></article>
+</div>
+<div class="dock">
+  <div class="dock-inner">
+    <button type="button" id="prev">Назад</button>
+    <button type="button" class="primary" id="reveal">Показать ответ</button>
+    <button type="button" id="next">Дальше</button>
+    <div class="row2">
+      <button type="button" class="good" id="yes">Помню</button>
+      <button type="button" id="no">Ещё раз</button>
+    </div>
+  </div>
+</div>
+<script>
+const TOPIC = {"overview": "Все пять", "s": "S", "o": "O", "l": "L", "i": "I", "d": "D"};
+const CARDS = [{"id": "solid-names", "topic": "overview", "stuck": false, "prompt": "Расшифруй SOLID.", "answer": "S — single responsibility, одна причина для изменения. O — open/closed, расширять без правки старого кода. L — Liskov substitution, наследник умеет стоять там, где ждут родителя. I — interface segregation, узкие интерфейсы вместо одного толстого. D — dependency inversion, зависеть от договора, а не от конкретного класса. Это критерии устройства кода. Компилятор их не проверяет.\n\nКак увидеть: Пять вопросов к классу: одна ли причина его менять, можно ли добавить случай без правки switch, встанет ли наследник на место родителя, нет ли в интерфейсе лишних методов, не создаёт ли класс чужие детали через new."}, {"id": "s-def", "topic": "s", "stuck": false, "prompt": "В чём одна причина изменения у TransferService?", "answer": "Сервис меняют, когда меняется правило перевода: как списать, как зачислить, как отказать при нехватке денег. Текст СМС, код HTTP-ответа и вёрстка выписки — другие причины. Их правят, даже если правило перевода не менялось. Если всё это лежит в одном классе, любая из причин заставляет менять и заново проверять перевод.\n\nКак увидеть: Причина изменения — это тип задачи, из-за которой правят файл. Правило денег и текст пуша правят разные люди в разное время. Значит это два класса, даже если сейчас оба куска короткие."}, {"id": "s-bad", "topic": "s", "stuck": false, "prompt": "Какой класс нарушает single responsibility?", "answer": "Класс, в котором метод transfer и списывает деньги, и собирает текст пуша, и сам пишет JSON в сокет. Три независимые причины правок сходятся в одном файле. Перевод остаётся в сервисе, текст сообщения собирает отдельный класс, HTTP остаётся в контроллере.\n\nКак увидеть: Признак: в одном методе и UPDATE баланса, и склейка строки «Вам пришло 100 сом», и установка HTTP 201. Любая правка текста уведомления заставляет трогать код денег."}, {"id": "o-def", "topic": "o", "stuck": false, "prompt": "Что значит «открыт для расширения, закрыт для изменения» на комиссии перевода?", "answer": "Новая комиссия добавляется новым классом, который выполняет уже существующий интерфейс Commission, а не новой веткой if внутри transfer. Старый метод перевода продолжает вызывать commission.calculate(amount) и не обрастает знаниями о каждой новой схеме. Расширение — новый класс. Изменение — правка уже работающего switch.\n\nКак увидеть: Старый transfer вызывает commission.calculate и не содержит списка схем. Новая схема — новый класс и регистрация его в сборке. Метод перевода при этом не открывают."}, {"id": "o-bad", "topic": "o", "stuck": false, "prompt": "Где здесь нарушение open/closed?", "answer": "В методе, который сам решает схему: if (type.equals(\"CARD\")) ... else if (type.equals(\"SWIFT\")) ... else if (type.equals(\"QR\")). Каждая новая схема — правка этого метода и риск задеть старые ветки. Схема должна приходить снаружи уже как объект со своим calculate.\n\nКак увидеть: Растущий if по строке типа — каждый новый тип правит старый метод и может сломать соседнюю ветку. Ветки должны стать классами за одним интерфейсом."}, {"id": "l-def", "topic": "l", "stuck": false, "prompt": "Что запрещает подстановка Лисков?", "answer": "Наследник должен выдерживать договор родителя. Код, который держит Account и вызывает debit, не должен ломаться, если вместо базового счёта подставили наследника. Если SavingsAccount.debit всегда бросает «снятие запрещено», хотя Account.debit обещает списать при достаточном балансе, подстановка ломает вызывающий код. Наследник сузил обещание.\n\nКак увидеть: Тест простой: возьми код, который работает с Account, подставь наследника, не меняя вызовы. Если он начинает ловить неожиданные исключения или получать другую площадь, подстановка сломана."}, {"id": "l-bad", "topic": "l", "stuck": false, "prompt": "Почему квадрат как наследник прямоугольника — плохой пример подстановки?", "answer": "У прямоугольника ширину и высоту меняют по отдельности, площадь равна произведению. У квадрата установка ширины обязана поменять и высоту, иначе это уже не квадрат. Код, который у Rectangle увеличил только ширину и проверяет площадь, на Square получит другой результат. Наследник не смог встать на место родителя незаметно.\n\nКак увидеть: Rectangle обещает, что ширина и высота независимы. Square не может сдержать это обещание. Поэтому квадрат не наследник прямоугольника, даже если в быту «квадрат — частный прямоугольник»."}, {"id": "i-def", "topic": "i", "stuck": false, "prompt": "Зачем дробить толстый интерфейс?", "answer": "Класс не должен реализовывать методы, которые ему не нужны. Если AccountRepository требует и balance, и sendSms, и renderPdf, JDBC-классу приходится оставлять пустые методы или тащить телефонного провайдера. Отдельные интерфейсы AccountRepository и NotificationSender каждый реализует тот, кому это и есть работа.\n\nКак увидеть: Интерфейс должен быть таким, чтобы реализации не стыдились части методов. Если методу сервиса нужен только balance, не протаскивай через этот тип ещё и sendSms."}, {"id": "i-bad", "topic": "i", "stuck": false, "prompt": "Какой признак, что интерфейс пора делить?", "answer": "Реализации выбрасывают UnsupportedOperationException из части методов или оставляют их пустыми. Вызывающий код всё равно видит эти методы и может их вызвать. Узкий интерфейс оставляет в договоре только то, что нужно этому сценарию. Вторую способность подключают вторым интерфейсом.\n\nКак увидеть: Пустые методы и UnsupportedOperationException — симптом. Раздели договор на тот, который реально выполняют все, и тот, который нужен только одному классу."}, {"id": "d-def", "topic": "d", "stuck": false, "prompt": "Куда направлен dependency inversion в уже знакомом TransferService?", "answer": "Сервис зависит от AccountRepository, договора, а не от JdbcAccountRepository. Конкретный класс создаёт контейнер и передаёт его в конструктор. Правило перевода не вызывает new детального класса. Деталь подстраивается под договор, а не договор под JDBC.\n\nКак увидеть: Стрелка зависимости смотрит на интерфейс. Конкретный JDBC появляется в конфигурации контейнера, не в тексте правила перевода. Тест собирает сервис с заглушкой тем же конструктором."}, {"id": "d-bad", "topic": "d", "stuck": false, "prompt": "Какая строка внутри сервиса ломает инверсию зависимостей?", "answer": "AccountRepository accounts = new JdbcAccountRepository(dataSource) прямо в конструкторе или методе сервиса. Сервис сам выбрал деталь и сам её собрал. Тест без базы уже не подставить. Зависимость должна прийти аргументом конструктора, тип аргумента — интерфейс.\n\nКак увидеть: new JdbcAccountRepository внутри сервиса зашивает и класс, и способ его создания. Подменить базу или убрать её в тесте уже нельзя без правки сервиса."}, {"id": "which-s", "topic": "overview", "stuck": false, "prompt": "В transfer одновременно меняют баланс, пишут HTTP-статус и форматируют СМС. Какая буква SOLID про это?", "answer": "S. У метода три причины измениться: правило денег, протокол ответа и текст уведомления. Буква D была бы про new конкретного класса, O — про растущий switch схем, I — про толстый интерфейс.\n\nКак увидеть: Смотри, сколько независимых причин открыть файл. Деньги, HTTP и текст СМС — три. Это S, даже если new внутри нет и интерфейсы узкие."}, {"id": "which-d", "topic": "overview", "stuck": false, "prompt": "Сервис сам делает new JdbcAccountRepository(). Какая буква SOLID про это в первую очередь?", "answer": "D. Зависимость направлена на конкретный класс, и сервис сам его создаёт. Даже если обязанностей у сервиса одна, деталь базы вшита внутрь. Конструктор с AccountRepository разворачивает эту стрелку.\n\nКак увидеть: Смотри, кто делает new детали. Если сервис сам, это D. S могла бы быть соблюдена: обязанность одна, но деталь всё равно вшита."}];
+const KEY = "solid-known-v2";
+let mode = "all", topic = "all", index = 0, revealed = false;
+let known = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+const chips = document.getElementById("chips");
+chips.innerHTML = '<button type="button" data-topic="all" class="active">Все темы</button>' +
+  Object.entries(TOPIC).map(([value, label]) => `<button type="button" data-topic="${value}">${label}</button>`).join("");
+function save() { localStorage.setItem(KEY, JSON.stringify([...known])); }
+function filtered() {
+  return CARDS.filter(card => {
+    if (mode === "stuck" && !card.stuck) return false;
+    if (mode === "open" && known.has(card.id)) return false;
+    if (topic !== "all" && card.topic !== topic) return false;
+    return true;
+  });
+}
+function escapeHtml(value) {
+  return value.replace(/[&<>]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[ch]));
+}
+function answerBlocks(text) {
+  return text.split(/\n\n+/).map(part => {
+    if (part.startsWith("Как увидеть:")) {
+      return `<div class="note"><strong>Как увидеть</strong>${escapeHtml(part.slice("Как увидеть:".length).trim())}</div>`;
+    }
+    return `<p class="body">${escapeHtml(part)}</p>`;
+  }).join("");
+}
+function render() {
+  const list = filtered();
+  const knownCount = CARDS.filter(c => known.has(c.id)).length;
+  document.getElementById("fill").style.width = (CARDS.length ? (knownCount / CARDS.length * 100) : 0) + "%";
+  document.querySelectorAll("[data-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+  document.querySelectorAll("[data-topic]").forEach(btn => btn.classList.toggle("active", btn.dataset.topic === topic));
+  const root = document.getElementById("card");
+  if (!list.length) {
+    root.innerHTML = "<p class='empty'>В этом фильтре карточек нет. Выбери «Все» или сними «Ещё не помню».</p>";
+    document.getElementById("pos").textContent = "0";
+    return;
+  }
+  if (index >= list.length) index = 0;
+  const card = list[index];
+  document.getElementById("pos").textContent = `${index + 1} / ${list.length}`;
+  const flag = card.stuck ? "<span class='mark'>разбирали отдельно</span>" : "";
+  const knownMark = known.has(card.id) ? "<span class='mark'>помню</span>" : "";
+  const body = revealed
+    ? `<div class="answer">${answerBlocks(card.answer)}</div>`
+    : `<p class="cue">Закрой ответ в голове. Если можешь объяснить вслух, нажимай «Помню».</p>`;
+  root.innerHTML = `<div class="kicker">${escapeHtml(TOPIC[card.topic])}${flag}${knownMark}</div><h2>${escapeHtml(card.prompt)}</h2>${body}`;
+  document.getElementById("reveal").textContent = revealed ? "Скрыть ответ" : "Показать ответ";
+}
+function go(delta) {
+  const list = filtered();
+  if (!list.length) return;
+  index = (index + delta + list.length) % list.length;
+  revealed = false;
+  render();
+}
+document.getElementById("reveal").onclick = () => { revealed = !revealed; render(); };
+document.getElementById("yes").onclick = () => {
+  const list = filtered();
+  const card = list[index];
+  if (!card) return;
+  known.add(card.id); save(); revealed = false;
+  if (mode === "open") { if (index >= filtered().length) index = 0; render(); return; }
+  go(1);
+};
+document.getElementById("no").onclick = () => {
+  const card = filtered()[index];
+  if (!card) return;
+  known.delete(card.id); save(); go(1);
+};
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+document.getElementById("modes").onclick = (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn) return;
+  mode = btn.dataset.mode; index = 0; revealed = false; render();
+};
+chips.onclick = (event) => {
+  const btn = event.target.closest("[data-topic]");
+  if (!btn) return;
+  topic = btn.dataset.topic; index = 0; revealed = false; render();
+};
+render();
+</script>
+</body>
+</html>

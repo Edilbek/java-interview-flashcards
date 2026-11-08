@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Postgres</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f0e8;
+    --surface: #fffdf9;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --accent: #1e3a8a;
+    --accent-ink: #fff;
+    --soft: #e7eef8;
+    --note: #f6f1e7;
+    --note-ink: #44403c;
+    --good: #14532d;
+    --good-soft: #e8f6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141210;
+      --surface: #1f1c19;
+      --ink: #fafaf9;
+      --muted: #a8a29e;
+      --line: #44403c;
+      --accent: #bfdbfe;
+      --accent-ink: #172554;
+      --soft: #243044;
+      --note: #2a241c;
+      --note-ink: #e7e5e4;
+      --good: #bbf7d0;
+      --good-soft: #143024;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 140px; }
+  a { color: var(--accent); text-decoration: none; }
+  .back { font-size: 14px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .pos { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 8px 0 14px; font-size: 15px; }
+  .bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .seg, .chips { display: flex; gap: 8px; }
+  .seg { margin-bottom: 10px; }
+  .seg button, .chips button, .dock button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .seg button { flex: 1; min-height: 40px; padding: 8px 10px; }
+  .seg button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chips { overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chips button { flex: 0 0 auto; padding: 8px 12px; min-height: 36px; font-size: 14px; }
+  .chips button.active { background: var(--soft); border-color: var(--accent); color: var(--accent); }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px 20px; min-height: 320px; }
+  .kicker { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .mark { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--note); color: var(--note-ink); }
+  h2 { font-size: 24px; line-height: 1.35; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .cue { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  .answer { margin-top: 22px; display: grid; gap: 12px; }
+  .answer p { margin: 0; font-size: 17px; line-height: 1.55; }
+  .body { padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 12px 14px; }
+  .note strong { display: block; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .dock-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+  .dock button { border-radius: 12px; min-height: 48px; padding: 10px 8px; }
+  .dock .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .dock .good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">Все колоды</a>
+  <div class="head">
+    <h1>Postgres</h1>
+    <div class="pos" id="pos">1 / 1</div>
+  </div>
+  <p class="lead">MVCC, блокировки, индексы и проведение перевода. Сначала сформулируй ответ сам.</p>
+  <div class="bar" aria-hidden="true"><span id="fill"></span></div>
+  <div class="seg" id="modes">
+    <button type="button" data-mode="all" class="active">Все</button>
+    <button type="button" data-mode="stuck">Где путался</button>
+    <button type="button" data-mode="open">Ещё не помню</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <article id="card"></article>
+</div>
+<div class="dock">
+  <div class="dock-inner">
+    <button type="button" id="prev">Назад</button>
+    <button type="button" class="primary" id="reveal">Показать ответ</button>
+    <button type="button" id="next">Дальше</button>
+    <div class="row2">
+      <button type="button" class="good" id="yes">Помню</button>
+      <button type="button" id="no">Ещё раз</button>
+    </div>
+  </div>
+</div>
+<script>
+const TOPIC = {"postgres": "MVCC и блокировки", "index": "Индексы", "transfer": "Перевод"};
+const CARDS = [{"id": "mvcc-uncommitted", "topic": "postgres", "stuck": false, "prompt": "T1 уменьшил баланс A, но ещё не сделал COMMIT. Что увидит SELECT перевода T2?", "answer": "Старое закоммиченное значение. UPDATE создаёт новую версию строки, чужой запрос её не видит, пока нет COMMIT. Читатель не ждёт писателя. Это MVCC.\n\nКак увидеть: T2 не видит грязное списание и не ждёт T1 на обычном SELECT. Он видит последнюю закоммиченную версию. Новая версия строки станет видна другим только после COMMIT."}, {"id": "lost-update-rc", "topic": "postgres", "stuck": false, "prompt": "Два перевода прочитали 1000 и оба записали 900. Почему READ COMMITTED это разрешил?", "answer": "Оба прочитали одну и ту же уже закоммиченную версию 1000: ни один ещё не сделал COMMIT. Уровень по умолчанию не склеивает чужое чтение и чужую запись в одно действие. Второй COMMIT затирает результат первого. Один UPDATE SET balance = balance - 100 уменьшает ту версию, которая есть в момент команды.\n\nКак увидеть: Оба прочитали закоммиченные 1000 до того, как кто-то записал 900. READ COMMITTED на этом чтении не виноват: виновата схема «прочитал в Java, вычел, записал готовое число». UPDATE SET balance = balance - 100 делает вычитание внутри базы."}, {"id": "for-update", "topic": "postgres", "stuck": true, "prompt": "Что делает SELECT ... FOR UPDATE для второго перевода?", "answer": "Первая транзакция запирает прочитанные строки до своего COMMIT или ROLLBACK. Вторая на этой строке ждёт и не читает старый баланс. После COMMIT она видит уже новое значение, после ROLLBACK — прежнее.\n\nКак увидеть: Второй SELECT FOR UPDATE не возвращает старую тысячу немедленно. Он ждёт. После COMMIT первого читает уже 900 и списывает от 900. После ROLLBACK первого видит прежние 1000."}, {"id": "why-lock-order", "topic": "postgres", "stuck": true, "prompt": "Почему счета запирают в одном порядке по id, а не «сначала отправитель»?", "answer": "Разный порядок даёт deadlock: один держит A и ждёт B, другой держит B и ждёт A. Общий порядок по возрастанию id разрешает ждать только более поздний счёт. Вторая транзакция стоит в очереди на меньший id и не держит замок, который нужен первой. Круга нет.\n\nКак увидеть: Круг возможен, только если один уже держит поздний счёт и ждёт ранний. Общий порядок по id запрещает брать поздний, пока не взят ранний. Второй перевод стоит в очереди на меньшем id и ещё ничего не держит."}, {"id": "idempotent-retry", "topic": "transfer", "stuck": false, "prompt": "Клиент прислал тот же Idempotency-Key после таймаута. Почему деньги не спишутся второй раз?", "answer": "Сервис находит уже сохранённый перевод по этому ключу и возвращает его результат, новых записей нет. Уникальный индекс на ключе не даст вставить второй перевод, даже если два одинаковых запроса пришли одновременно.\n\nКак увидеть: Таймаут не значит, что перевода не было: COMMIT мог пройти, а ответ потеряться. Повтор с тем же ключом находит строку и отдаёт её. Уникальный индекс нужен на случай, когда два повтора приходят одновременно и оба ещё не видят строку."}, {"id": "lock-both", "topic": "transfer", "stuck": true, "prompt": "Зачем в одной транзакции запирать оба счёта и именно в порядке id?", "answer": "Перевод меняет две строки, обе должны остаться стабильными до COMMIT. FOR UPDATE держит их до конца транзакции. Порядок по id не даёт переводам A→B и B→A встать друг напротив друга: оба берут сначала меньший id. Второй ждёт на первом счёте и не запирает второй раньше первого.\n\nКак увидеть: Один замок на A не защищает B: параллельный перевод может менять получателя. Нужны оба замка до COMMIT. Порядок по id нужен отдельно, чтобы A→B и B→A не встали друг напротив друга."}, {"id": "ledger", "topic": "transfer", "stuck": false, "prompt": "Зачем писать две строки журнала, если балансы и так обновляются?", "answer": "Баланс — итог. По числам на счетах уже не восстановить, какой перевод их изменил. Две строки журнала фиксируют списание и зачисление. Их сумма равна нулю. Балансы обновляются в той же транзакции.\n\nКак увидеть: Баланс 900 не помнит, какой перевод его сделал. Две строки журнала помнят: −10000 у A и +10000 у B, сумма нулевая. Если цифры разъедутся, журнал можно пересчитать."}, {"id": "sms-after-commit", "topic": "transfer", "stuck": false, "prompt": "СМС не отправилось уже после COMMIT. Откатывается ли перевод?", "answer": "Нет. Отправка не входит в транзакцию перевода. Иначе сбой СМС откатил бы и деньги. Запись «нужно отправить СМС» сохраняют вместе с переводом, а шлют уже после COMMIT.\n\nКак увидеть: Перевод уже законен без СМС. Если отправка внутри той же транзакции, мёртвый шлюз откатит деньги. Поэтому в транзакции пишут только запись «отправить», а саму отправку делают после COMMIT."}, {"id": "seq-scan", "topic": "index", "stuck": false, "prompt": "Что означает Seq Scan в плане поиска счёта по номеру?", "answer": "Последовательный просмотр. База читает строки таблицы одну за другой и оставляет ту, у которой номер совпал. На миллионе счетов это миллион проверок ради одной строки. Индекс при таком плане не используется.\n\nКак увидеть: Filter в плане означает: строку прочитали и потом выбросили. На большом account это чтение всей таблицы ради одного номера. Индекс как раз убирает этот проход."}, {"id": "index-scan", "topic": "index", "stuck": false, "prompt": "Что меняется после Index Scan using account_number_idx?", "answer": "Индекс — отдельное дерево, ключи в нём лежат по порядку. База спускается по дереву до номера и оттуда читает нужную строку таблицы, а не всю таблицу. Index Cond в плане — это условие, которым искали в дереве. Первичный ключ id уже имеет такой индекс.\n\nКак увидеть: Дерево узкое, спуск по нему короткий. Дальше одна строка таблицы по ссылке из индекса. Поиск по первичному ключу id уже такой, отдельный CREATE INDEX для id не нужен."}, {"id": "explain-analyze", "topic": "index", "stuck": false, "prompt": "Чем EXPLAIN ANALYZE отличается от EXPLAIN?", "answer": "EXPLAIN только показывает план и оценку планировщика, запрос не выполняется. EXPLAIN ANALYZE выполняет запрос и добавляет фактическое время и число строк. На интервью смотрят тип прохода, Seq Scan или Index Scan, и actual rows.\n\nКак увидеть: Оценка планировщика может ошибиться. ANALYZE показывает, сколько строк реально прочитали и сколько это заняло. Смотри тип узла и actual rows, не только слово cost."}, {"id": "expression-index", "topic": "index", "stuck": false, "prompt": "Почему WHERE lower(number) = 'a-100' может не использовать индекс по колонке number?", "answer": "Индекс по number хранит номера как они записаны и в этом порядке их сортирует. Условие number = 'A-100' совпадает с этим порядком. lower(number) сравнивает результат функции, а в дереве ключа 'a-100' нет, там лежит 'A-100'. Для такого запроса индекс строят по тому же выражению: CREATE INDEX ON account (lower(number)).\n\nКак увидеть: Индекс — это отсортированные ключи. lower(number) — другой ключ, чем number. Пока в дереве лежат исходные номера, поиск по результату функции идёт мимо дерева. Индекс должен быть построен по тому же выражению, что в WHERE."}, {"id": "composite-index", "topic": "index", "stuck": false, "prompt": "Почему для выписки индекс (account_id, created_at), а не (created_at, account_id)?", "answer": "Запрос звучит как WHERE account_id = 'A' AND created_at >= дата. Слева равенство по счёту, справа диапазон по времени. Составной индекс используют слева направо: сначала точное совпадение, потом диапазон. Если первой колонкой стоит время, поиск всех операций одного счёта по этому индексу уже не идёт так же прямо.\n\nКак увидеть: Индекс читают слева направо. Равенство по account_id отсекает одного клиента, диапазон created_at идёт уже внутри его операций. Если первой колонкой стоит дата, «все операции счёта A» так не вырезать."}, {"id": "unique-index", "topic": "index", "stuck": false, "prompt": "Зачем уникальный индекс на idempotency_key платежа?", "answer": "Вторая вставка с тем же ключом получит ошибку базы, даже если два одинаковых запроса пришли одновременно и оба не нашли перевод в начале транзакции. Повторно списать деньги из-за гонки вставки нельзя. Обычный поиск по ключу без UNIQUE такую гонку не закрывает.\n\nКак увидеть: Обычный индекс ускоряет поиск, но вставить дубликат разрешает. UNIQUE превращает повтор ключа в ошибку вставки. Сервис ловит её и возвращает уже существующий перевод."}];
+const KEY = "postgres-known-v2";
+let mode = "all", topic = "all", index = 0, revealed = false;
+let known = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+const chips = document.getElementById("chips");
+chips.innerHTML = '<button type="button" data-topic="all" class="active">Все темы</button>' +
+  Object.entries(TOPIC).map(([value, label]) => `<button type="button" data-topic="${value}">${label}</button>`).join("");
+function save() { localStorage.setItem(KEY, JSON.stringify([...known])); }
+function filtered() {
+  return CARDS.filter(card => {
+    if (mode === "stuck" && !card.stuck) return false;
+    if (mode === "open" && known.has(card.id)) return false;
+    if (topic !== "all" && card.topic !== topic) return false;
+    return true;
+  });
+}
+function escapeHtml(value) {
+  return value.replace(/[&<>]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[ch]));
+}
+function answerBlocks(text) {
+  return text.split(/\n\n+/).map(part => {
+    if (part.startsWith("Как увидеть:")) {
+      return `<div class="note"><strong>Как увидеть</strong>${escapeHtml(part.slice("Как увидеть:".length).trim())}</div>`;
+    }
+    return `<p class="body">${escapeHtml(part)}</p>`;
+  }).join("");
+}
+function render() {
+  const list = filtered();
+  const knownCount = CARDS.filter(c => known.has(c.id)).length;
+  document.getElementById("fill").style.width = (CARDS.length ? (knownCount / CARDS.length * 100) : 0) + "%";
+  document.querySelectorAll("[data-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+  document.querySelectorAll("[data-topic]").forEach(btn => btn.classList.toggle("active", btn.dataset.topic === topic));
+  const root = document.getElementById("card");
+  if (!list.length) {
+    root.innerHTML = "<p class='empty'>В этом фильтре карточек нет. Выбери «Все» или сними «Ещё не помню».</p>";
+    document.getElementById("pos").textContent = "0";
+    return;
+  }
+  if (index >= list.length) index = 0;
+  const card = list[index];
+  document.getElementById("pos").textContent = `${index + 1} / ${list.length}`;
+  const flag = card.stuck ? "<span class='mark'>разбирали отдельно</span>" : "";
+  const knownMark = known.has(card.id) ? "<span class='mark'>помню</span>" : "";
+  const body = revealed
+    ? `<div class="answer">${answerBlocks(card.answer)}</div>`
+    : `<p class="cue">Закрой ответ в голове. Если можешь объяснить вслух, нажимай «Помню».</p>`;
+  root.innerHTML = `<div class="kicker">${escapeHtml(TOPIC[card.topic])}${flag}${knownMark}</div><h2>${escapeHtml(card.prompt)}</h2>${body}`;
+  document.getElementById("reveal").textContent = revealed ? "Скрыть ответ" : "Показать ответ";
+}
+function go(delta) {
+  const list = filtered();
+  if (!list.length) return;
+  index = (index + delta + list.length) % list.length;
+  revealed = false;
+  render();
+}
+document.getElementById("reveal").onclick = () => { revealed = !revealed; render(); };
+document.getElementById("yes").onclick = () => {
+  const list = filtered();
+  const card = list[index];
+  if (!card) return;
+  known.add(card.id); save(); revealed = false;
+  if (mode === "open") { if (index >= filtered().length) index = 0; render(); return; }
+  go(1);
+};
+document.getElementById("no").onclick = () => {
+  const card = filtered()[index];
+  if (!card) return;
+  known.delete(card.id); save(); go(1);
+};
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+document.getElementById("modes").onclick = (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn) return;
+  mode = btn.dataset.mode; index = 0; revealed = false; render();
+};
+chips.onclick = (event) => {
+  const btn = event.target.closest("[data-topic]");
+  if (!btn) return;
+  topic = btn.dataset.topic; index = 0; revealed = false; render();
+};
+render();
+</script>
+</body>
+</html>

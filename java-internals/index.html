@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Java Internals</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f0e8;
+    --surface: #fffdf9;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --accent: #1e3a8a;
+    --accent-ink: #fff;
+    --soft: #e7eef8;
+    --note: #f6f1e7;
+    --note-ink: #44403c;
+    --good: #14532d;
+    --good-soft: #e8f6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141210;
+      --surface: #1f1c19;
+      --ink: #fafaf9;
+      --muted: #a8a29e;
+      --line: #44403c;
+      --accent: #bfdbfe;
+      --accent-ink: #172554;
+      --soft: #243044;
+      --note: #2a241c;
+      --note-ink: #e7e5e4;
+      --good: #bbf7d0;
+      --good-soft: #143024;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 140px; }
+  a { color: var(--accent); text-decoration: none; }
+  .back { font-size: 14px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .pos { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 8px 0 14px; font-size: 15px; }
+  .bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .seg, .chips { display: flex; gap: 8px; }
+  .seg { margin-bottom: 10px; }
+  .seg button, .chips button, .dock button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .seg button { flex: 1; min-height: 40px; padding: 8px 10px; }
+  .seg button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chips { overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chips button { flex: 0 0 auto; padding: 8px 12px; min-height: 36px; font-size: 14px; }
+  .chips button.active { background: var(--soft); border-color: var(--accent); color: var(--accent); }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px 20px; min-height: 320px; }
+  .kicker { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .mark { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--note); color: var(--note-ink); }
+  h2 { font-size: 24px; line-height: 1.35; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .cue { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  .answer { margin-top: 22px; display: grid; gap: 12px; }
+  .answer p { margin: 0; font-size: 17px; line-height: 1.55; }
+  .body { padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 12px 14px; }
+  .note strong { display: block; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .dock-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+  .dock button { border-radius: 12px; min-height: 48px; padding: 10px 8px; }
+  .dock .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .dock .good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">Все колоды</a>
+  <div class="head">
+    <h1>Java Internals</h1>
+    <div class="pos" id="pos">1 / 1</div>
+  </div>
+  <p class="lead">Память, HashMap, коллекции, исключения, generics, потоки и сборка мусора. Сначала сформулируй ответ сам.</p>
+  <div class="bar" aria-hidden="true"><span id="fill"></span></div>
+  <div class="seg" id="modes">
+    <button type="button" data-mode="all" class="active">Все</button>
+    <button type="button" data-mode="stuck">Где путался</button>
+    <button type="button" data-mode="open">Ещё не помню</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <article id="card"></article>
+</div>
+<div class="dock">
+  <div class="dock-inner">
+    <button type="button" id="prev">Назад</button>
+    <button type="button" class="primary" id="reveal">Показать ответ</button>
+    <button type="button" id="next">Дальше</button>
+    <div class="row2">
+      <button type="button" class="good" id="yes">Помню</button>
+      <button type="button" id="no">Ещё раз</button>
+    </div>
+  </div>
+</div>
+<script>
+const TOPIC = {"memory": "Память", "map": "HashMap", "collections": "Коллекции", "exceptions": "Исключения", "generics": "Generics", "threads": "Потоки", "gc": "Сборка мусора"};
+const CARDS = [{"id": "frame", "topic": "memory", "stuck": true, "prompt": "Что такое кадр метода?", "answer": "Кадр — это лист стека на один вызов метода. На нём лежат параметры и локальные переменные этого вызова. Вызов кладёт лист сверху, return снимает его. Ячейка — одна переменная на листе, кадр — весь лист.\n\nКак увидеть: Вызов debit из main кладёт второй лист поверх листа main. amount лежит на верхнем. return снимает только его, лист main с from остаётся."}, {"id": "ref-heap", "topic": "memory", "stuck": false, "prompt": "Account from = new Account(\"A\", 100_000). Что лежит в from и что лежит в куче?", "answer": "В ячейке from на стеке лежит ссылка, то есть адрес. Сам объект Account с полями id и balance лежит в куче.\n\nКак увидеть: Если скопировать from в другую переменную, в куче по-прежнему один Account. Две ячейки стека держат один адрес."}, {"id": "amount-slot", "topic": "memory", "stuck": false, "prompt": "Где лежит long amount внутри debit и кто освобождает эту ячейку?", "answer": "amount — само число в кадре debit, не объект в куче. Кадр выбрасывается, когда debit возвращается. Сборщик мусора эту ячейку не трогает: он работает с кучей.\n\nКак увидеть: Пока debit работает, кадр есть и число живо. Метод вернулся — кадра нет, и сборщику тут нечего забирать: объекта Long в куче не создавали."}, {"id": "rebind-print", "topic": "memory", "stuck": true, "prompt": "from указывает на счёт A. rebind делает account = new Account(\"Z\", 0). Что напечатает from.id после вызова?", "answer": "A. В метод скопировали адрес. Присваивание записывает адрес Z в ячейку на листе rebind. Ячейка from лежит на листе main, её эта строка не меняет.\n\nКак увидеть: Внутри rebind печать показала бы Z, потому что локальная ячейка уже смотрит на новый объект. Снаружи println видит A."}, {"id": "why-rebind", "topic": "memory", "stuck": true, "prompt": "Зачем в учебном примере rebind, если from всё равно остаётся на счёте A?", "answer": "Такой метод ничего полезного для вызывающего кода не делает. Его показывают как ловушку: присваивание параметру меняет только локальную копию ссылки. Чтобы заменить объект у вызывающего, новый счёт возвращают и пишут from = switched() уже в main. Чтобы изменить поля того же объекта, пишут в поля, а не в саму переменную.\n\nКак увидеть: Полезный метод либо меняет поля существующего счёта, либо возвращает новый объект, и присваивание стоит в main: from = switched()."}, {"id": "mutate", "topic": "memory", "stuck": false, "prompt": "Метод получает Account и делает account.balanceTyiyn = 0. Что увидит вызывающий код?", "answer": "Баланс 0. В метод скопировали адрес того же объекта в куче. Запись в поле меняет объект, и вызывающий смотрит на него той же ссылкой.\n\nКак увидеть: Это не замена переменной from. Обе ячейки, from и account, смотрят на один объект, поэтому запись в balance видна после выхода из метода."}, {"id": "integer-cache", "topic": "memory", "stuck": false, "prompt": "Почему Integer 127 == 127 даёт true, а Integer 128 == 128 даёт false?", "answer": "== у объектов сравнивает ссылки. Integer.valueOf кэширует значения от -128 до 127, поэтому обе переменные 127 указывают на один объект. 128 каждый раз создаёт новый объект. equals при этом сравнивает числа и для 128 даёт true.\n\nКак увидеть: На собеседовании сравнивай обёртки через equals. == для Integer зависит от того, попало ли число в кэш, и для денег это ловушка."}, {"id": "string-pool", "topic": "memory", "stuck": false, "prompt": "Что дадут a == b, a == c и a.equals(c), если a и b это литерал \"mbank\", а c это new String(\"mbank\")?", "answer": "true, false, true. Одинаковые литералы — одна строка из пула. new создаёт отдельный объект, поэтому == ложен. equals сравнивает символы.\n\nКак увидеть: new String(\"mbank\") обходит пул и всегда даёт отдельный объект. Поэтому пароли и id сравнивают equals, не ==."}, {"id": "money", "topic": "memory", "stuck": false, "prompt": "Почему баланс хранят в long (тыйыны) или BigDecimal, а не в double?", "answer": "double хранит двоичную дробь неточно: 0.1 + 0.2 даёт 0.30000000000000004. Деньги считают целыми минимальными единицами или десятичным BigDecimal.\n\nКак увидеть: 1 сом хранят как 100 тыйынов в long. BigDecimal берут, когда нужна десятичная арифметика, и сравнивают его через compareTo, не через equals масштаба."}, {"id": "jit", "topic": "memory", "stuck": false, "prompt": "Кто исполняет bytecode и что JIT делает с горячим методом?", "answer": "Команда java запускает JVM, и bytecode исполняет JVM. JIT переводит в машинный код методы, которые вызываются часто, а не весь класс сразу при старте.\n\nКак увидеть: Пока метод холодный, JVM исполняет bytecode. После прогрева тот же метод уже может выполняться машинным кодом. Поэтому первый запрос к сервису часто медленнее следующих."}, {"id": "bucket", "topic": "map", "stuck": true, "prompt": "Что такое корзина в HashMap?", "answer": "Корзина — одна ячейка внутреннего массива HashMap. Сама карта — весь массив плюс записи «ключ — значение». hashCode выбирает номер ячейки. В ячейке может лежать цепочка пар: несколько ключей иногда попадают в один номер.\n\nКак увидеть: HashMap — это массив корзин. Индекс выбирают из hashCode. В одной корзине может висеть несколько пар, если разные ключи дали один индекс."}, {"id": "lookup-steps", "topic": "map", "stuck": true, "prompt": "Как HashMap ищет значение по ключу?", "answer": "Считает hashCode ключа и по нему выбирает одну ячейку массива, а не обходит всю таблицу. В ячейке пара подходит, только если число, записанное рядом с ней при put, совпало с числом текущего ключа, и дальше либо это тот же объект, либо equals вернул true.\n\nКак увидеть: Карта не обходит все корзины. Сначала число, потом одна ячейка, внутри ячейки сравнение сохранённого hash и equals. Чужой hash отсекается до equals."}, {"id": "equals-hashcode", "topic": "map", "stuck": false, "prompt": "Как делят работу hashCode и equals?", "answer": "hashCode выбирает корзину. equals различает ключи внутри неё. Если a.equals(b), их hashCode обязаны совпасть. Разные объекты могут случайно получить одно число — это коллизия, карта переживёт её через equals.\n\nКак увидеть: Если equals написан по id, hashCode тоже считают из id. Иначе два равных счёта попадут в разные корзины и get их не сведёт."}, {"id": "equals-only", "topic": "map", "stuck": false, "prompt": "Класс переопределил equals по id и не написал свой hashCode. put(new Key(\"A\")), затем get(new Key(\"A\")). Что вернётся?", "answer": "null. hashCode из Object считается по конкретному объекту. put и get — два разных объекта, два разных числа, поиск открывает другую ячейку и до equals не доходит.\n\nКак увидеть: get(того же самого объекта) может сработать: identity-hash совпадёт. get(new Key(\"A\")) — уже другой объект, другое число, другая корзина, null."}, {"id": "mutate-key", "topic": "map", "stuck": true, "prompt": "В карту положили Card с pan \"1111\" и значением \"active\", затем сделали card.pan = \"2222\". Что вернут get(card), get(new Card(\"1111\")), get(new Card(\"2222\")) и size()?", "answer": "null, null, null и 1. Пара осталась в ячейке, выбранной при put, а рядом записан hash(\"1111\"). get(card) и get(\"2222\") приносят уже hash(\"2222\"), он не совпадает с записанным числом. get(\"1111\") числом совпадает, но equals сравнивает текущий pan \"2222\" с \"1111\". size равен 1: пару не удаляли.\n\nКак увидеть: Пара физически остаётся в таблице, size равен 1. Испортился только способ её найти: и число, и equals больше не сходятся с тем, что было при put."}, {"id": "equals-not-ref", "topic": "map", "stuck": true, "prompt": "После смены pan на \"2222\" get(new Card(\"1111\")) даёт null. Это потому, что у ключей разные ссылки?", "answer": "Нет, equals у Card сравнивает pan, не ссылки. До изменения два разных объекта с pan \"1111\" как раз находили значение. После изменения в ячейке лежит тот же объект, но его pan уже \"2222\", и сравнение полей не проходит.\n\nКак увидеть: До мутации два разных new Card(\"1111\") находили значение. После смены pan тот же приём ломается из-за поля, не из-за того, что ссылки разные."}, {"id": "both-null", "topic": "map", "stuck": true, "prompt": "Почему get(new Card(\"2222\")) тоже null, хотя pan у лежащего ключа уже \"2222\"?", "answer": "Поиск требует сразу два совпадения: номер ячейки и число, сохранённое при put. У пары записан hash(\"1111\"). Ключ \"2222\" приносит другое число, пару пропускают и equals уже не спрашивают. Ключ \"1111\" приносит нужное число, но поля pan уже разные. Подходящего ключа больше нет, значение при этом остаётся в таблице.\n\nКак увидеть: Ключ \"2222\" прошёл бы equals с текущим pan, но приносит другое число, чем записано при put. Ключ \"1111\" приносит нужное число, но поля уже разные. Годного ключа нет."}, {"id": "stored-value", "topic": "map", "stuck": true, "prompt": "map.put(user, \"ok\"), затем user.name = \"bob\". Что лежит в паре как значение и что вернёт map.get(user)?", "answer": "Значение — строка \"ok\". Имя \"bob\" — это поле ключа, get его не возвращает. get(user) вернёт null: текущий hashCode считается от \"bob\", а рядом с парой записан hash(\"ann\"). Это тот же поиск, что containsKey(user), он тоже false. containsValue(\"ok\") при этом true: значения он смотрит без hashCode.\n\nКак увидеть: get возвращает значение пары, строку \"ok\", а не поле name. containsKey после смены имени тоже false. containsValue(\"ok\") true, потому что смотрит значения и по hash не ищет."}, {"id": "string-key", "topic": "map", "stuck": false, "prompt": "Почему String безопасен как ключ HashMap?", "answer": "Строку нельзя изменить: методы вроде toUpperCase возвращают новый объект. hashCode, по которому пару положили, не съезжает. Если поле, входящее в hashCode, переписать после put, пара останется в старой ячейке и get её не найдёт.\n\nКак увидеть: Если поле ключа, входящее в hashCode, можно переписать, пара останется в старой корзине. У String такого поля снаружи нет: методы возвращают новую строку."}, {"id": "list-ruby", "topic": "collections", "stuck": true, "prompt": "List в Java — это Array в Ruby?", "answer": "Ближе всего к массиву Ruby стоит ArrayList. List — интерфейс: индекс, порядок, повторы разрешены. String[] — другая вещь: длина задаётся при создании и не растёт. Отрицательного индекса, как arr[-1] в Ruby, у List нет.\n\nКак увидеть: ArrayList ближе всего к массиву Ruby: порядок, индекс, повторы, рост в конце. List — только договор. String[] — массив фиксированной длины, push у него нет."}, {"id": "list-arraylist", "topic": "collections", "stuck": true, "prompt": "Чем List отличается от ArrayList?", "answer": "List — интерфейс, объект из него не создают. ArrayList — класс, который этот интерфейс выполняет: внутри массив, get по индексу читает ячейку сразу. Тот же интерфейс выполняет LinkedList, но get идёт по узлам. Переменная типа List обещает только методы списка.\n\nКак увидеть: new List<>() не компилируется. new ArrayList<>() создаёт объект. Переменная типа List скрывает, массив там или цепочка узлов, и оставляет методы add и get."}, {"id": "list-get", "topic": "collections", "stuck": false, "prompt": "Почему get(500) у ArrayList на большом списке дешёвый, а у LinkedList дорогой?", "answer": "ArrayList читает ячейку внутреннего массива по номеру. LinkedList хранит цепочку узлов и до 500-го доходит проходом от начала или от конца.\n\nКак увидеть: Дойти до середины LinkedList стоит пропорционально числу узлов. У ArrayList это одна ячейка массива. Поэтому список по умолчанию — ArrayList."}, {"id": "hashset-size", "topic": "collections", "stuck": false, "prompt": "В HashSet дважды добавили new Account(\"A\") с equals и hashCode по id. Какой размер?", "answer": "2, если добавили ещё и другой id вроде \"B\". Второй Account(\"A\") совпал по hashCode и equals и был отброшен. HashSet внутри является HashMap: элемент — ключ, значение — заглушка.\n\nКак увидеть: Второй Account(\"A\") не добавляется, потому что HashSet — это HashMap, где элемент служит ключом. Совпали hashCode и equals — ключ уже есть."}, {"id": "treemap", "topic": "collections", "stuck": false, "prompt": "Чем TreeMap выбирает место ключа?", "answer": "Сравнением через Comparable или Comparator, не через hashCode. Обход идёт по возрастанию ключа. Один null-ключ допустим в HashMap и недопустим в TreeMap: его не с чем сравнивать.\n\nКак увидеть: TreeMap не вызывает hashCode. Место ключа определяется сравнением, поэтому обход идёт по возрастанию. null-ключ он не примет: сравнивать не с чем."}, {"id": "begin-rescue", "topic": "exceptions", "stuck": true, "prompt": "try / catch / finally — это begin / rescue в Ruby?", "answer": "Да, та же схема. begin — try, rescue — catch, ensure — finally, raise — throw. finally выполняется и без исключения, и после catch, и когда исключение ушло выше. Отличие Java: проверяемое исключение вроде IOException компилятор не пропустит без catch или throws. IllegalStateException объявлять не нужно.\n\nКак увидеть: Порядок тот же: try, потом catch, потом finally. Новое в Java — проверяемые исключения: IOException компилятор не пропустит без catch или throws."}, {"id": "checked", "topic": "exceptions", "stuck": false, "prompt": "debit бросает IllegalStateException. Обязан ли метод написать throws?", "answer": "Нет. IllegalStateException наследник RuntimeException, это непроверяемое исключение. throws или catch обязательны для проверяемых, например IOException и SQLException.\n\nКак увидеть: Нехватку денег бросают как IllegalStateException именно потому, что это RuntimeException: throws в сигнатуре debit не нужен, а @Transactional такой сбой откатит."}, {"id": "finally-order", "topic": "exceptions", "stuck": false, "prompt": "В try случился throw, есть catch на этот тип и finally. Что выполнится раньше?", "answer": "Сначала тело catch, потом finally, затем код после всего блока. Строки try, стоящие ниже throw, не выполняются.\n\nКак увидеть: Код try ниже throw не выполняется. catch обрабатывает ошибку, finally закрывает ресурс, затем идёт код после всего блока. Если catch нет, finally всё равно выполнится, и исключение полетит выше."}, {"id": "oom", "topic": "exceptions", "stuck": false, "prompt": "Почему OutOfMemoryError обычно не ловят в сервисе перевода?", "answer": "Это Error, поломка самой JVM: память кончилась. Ловить её в бизнес-методе бессмысленно, процесс уже не в состоянии нормально продолжать перевод.\n\nКак увидеть: Error — это не бизнес-отказ вроде нехватки денег. Память кончилась у JVM. Ловить это в transfer и продолжать перевод нельзя: процесс уже не в рабочем состоянии."}, {"id": "generics-plain", "topic": "generics", "stuck": true, "prompt": "Простыми словами: что такое generics?", "answer": "Пометка компилятору, какой тип здесь допустим. List<String> — список строк: число положить нельзя, get возвращает String. В работающей программе пометка стёрта, для JVM это обычный список, а приведение при чтении вставил компилятор.\n\nКак увидеть: Пометка существует для компилятора. В bytecode List<String> превращается в обычный List, а на get компилятор вставляет приведение к String."}, {"id": "generics-not-only-list", "topic": "generics", "stuck": true, "prompt": "Generics существуют только для List?", "answer": "Нет. Пометку ставят на класс, интерфейс и метод. Map<String, Account> помечает ключ и значение. Свой Box<T> хранит значение типа T. Метод <T> T first(List<T> items) возвращает тот тип, который лежит в переданном списке.\n\nКак увидеть: Map<String, Account> — два параметра. Свой Box<T> хранит что скажешь. Метод <T> T first(List<T>) возвращает тип элементов того списка, который передали."}, {"id": "generics-specify", "topic": "generics", "stuck": true, "prompt": "Верно ли, что generics просто указывает, какой тип должен быть?", "answer": "Да. Компилятор по этой пометке запрещает чужой тип и не требует ручного приведения при чтении. В JVM пометка уже не хранится: List<String> и List<Integer> — один класс.\n\nКак увидеть: Да, это указание допустимого типа. Плюс одно ограничение: в работающей программе надписи уже нет, поэтому List<String> и List<Integer> — один класс."}, {"id": "erasure-same-class", "topic": "generics", "stuck": false, "prompt": "Почему names.getClass() == amounts.getClass() даёт true для List<String> и List<Integer>?", "answer": "Параметр типа стирается при компиляции. В bytecode оба списка — обычный ArrayList. Отдельно «список строк» и «список чисел» JVM не различает.\n\nКак увидеть: getClass() смотрит класс объекта в куче, а параметр типа туда не записан. Поэтому сравнение классов даёт true, хотя переменные объявлены по-разному."}, {"id": "raw-cast", "topic": "generics", "stuck": false, "prompt": "Сырой List raw = names; raw.add(100) выполнился, а names.get(1) бросил ClassCastException. Когда вставилась проверка на String?", "answer": "Компилятор вставил приведение к String на get, не на add сырого списка. Число попало в список в обход проверки, исключение возникло в момент чтения. На такой add компилятор пишет предупреждение unchecked.\n\nКак увидеть: Сырой List обходит проверку, компилятор пишет unchecked. Число лежит в списке спокойно. Падает чтение, потому что приведение к String стоит на get."}, {"id": "no-primitive", "topic": "generics", "stuck": false, "prompt": "Почему список тыйынов объявляют List<Long>, а не List<long>?", "answer": "Параметром типа бывает только объект. long — примитив, у него нет объекта в куче. Long — обёртка, число упаковывается в неё автоматически.\n\nКак увидеть: Generics подставляют объект. long — голое число без объекта. Long — объект-обёртка, его и кладут в список, а упаковку компилятор делает сам."}, {"id": "extends-add", "topic": "generics", "stuck": false, "prompt": "Метод принимает List<? extends Number> и делает items.add(1). Что скажет компилятор?", "answer": "Ошибку компиляции. ? extends Number позволяет читать Number, потому что внутри точно число или его наследник. Класть нельзя: неизвестно, Integer там, Double или другой наследник.\n\nКак увидеть: Из List<? extends Number> можно прочитать Number: внутри точно число. Положить 1 нельзя, потому что список может оказаться List<Double>, и Integer туда не входит."}, {"id": "race-exists", "topic": "threads", "stuck": true, "prompt": "В Java бывает race condition?", "answer": "Да. Два потока читают и пишут одно поле в куче без замка. В прогоне два потока делали balance++, в поле осталось 109449 вместо 200000. synchronized гонку не отменяет глобально: он закрывает только помеченный участок.\n\nКак увидеть: В прогоне два потока сделали по 100_000 инкрементов и получили 109449 вместо 200000. synchronized закрывает только тот метод, на котором стоит. Остальной код без замка по-прежнему может гоняться."}, {"id": "ruby-thread", "topic": "threads", "stuck": true, "prompt": "Чем поток Java отличается от Thread в Ruby?", "answer": "Идея одна: отдельная линия выполнения и общие объекты. Thread.new соответствует new Thread(...).start(), join ждёт окончания. Mutex#synchronize соответствует synchronized. В MRI потоки Ruby не выполняют код сразу на двух ядрах, но balance += 1 всё равно рвётся между шагами. В Java потоки идут на разных ядрах одновременно.\n\nКак увидеть: Thread.new в Ruby — это new Thread(...).start() в Java, join ждёт конца. Mutex#synchronize — это synchronized. В Java потоки реально идут на двух ядрах сразу, гонка от этого только вероятнее."}, {"id": "lost-update", "topic": "threads", "stuck": false, "prompt": "Почему два потока по 100_000 раз делают balance++ и результат может быть меньше 200000?", "answer": "balance++ — это прочитать, прибавить, записать. Оба потока читают одно и то же число, каждый пишет свой результат, вторая запись затирает первую.\n\nКак увидеть: Оба прочитали 10, оба прибавили 1, оба записали 11. Одна единица потерялась. Так же теряется списание, если два перевода прочитали баланс и оба записали свой результат."}, {"id": "synchronized-result", "topic": "threads", "stuck": false, "prompt": "Метод deposit помечен synchronized. Какой итог у двух потоков и чего ждёт второй?", "answer": "Итог 200000. synchronized запирает объект на всё время метода. Второй поток ждёт этот замок и входит, когда первый из метода вышел.\n\nКак увидеть: Итог будет 200000. Замок держится на весь метод, не на одну строку balance++. Второй поток стоит перед входом, пока первый не выйдет."}, {"id": "volatile", "topic": "threads", "stuck": false, "prompt": "Поле balance сделали volatile, balance++ оставили без замка. Пропадут ли потерянные прибавления?", "answer": "Нет. volatile делает отдельную запись видимой другим потокам. «Прочитал, прибавил, записал» он в одно действие не склеивает, прибавления по-прежнему могут теряться.\n\nКак увидеть: volatile гарантирует, что другой поток увидит новую запись поля, а не старое значение из своего кэша. Составное balance++ он не превращает в одно действие."}, {"id": "two-accounts", "topic": "threads", "stuck": false, "prompt": "Два перевода идут по разным счетам. У каждого synchronized на методе экземпляра. Мешают ли они друг другу?", "answer": "Нет. Замок метода экземпляра — это сам объект, this. У счетов A и B разные замки, переводы идут одновременно. Два перевода по одному счёту выстраиваются в очередь.\n\nКак увидеть: synchronized на методе экземпляра запирает this. У счетов A и B разные this, переводы не мешают. Два перевода по одному и тому же счёту выстраиваются в очередь на одном замке."}, {"id": "why-pool", "topic": "threads", "stuck": false, "prompt": "Почему на каждый входящий платёж не создают свой new Thread?", "answer": "Поток дорогой. Без верхней границы каждый запрос добавляет ещё один, пока не кончится память. Пул создаёт фиксированное число потоков заранее и складывает лишние задачи в очередь.\n\nКак увидеть: Поток — это память стека и работа операционной системы по его созданию. На каждый платёж новый поток быстро съедает память. Пул создаёт фиксированное число потоков заранее."}, {"id": "five-tasks", "topic": "threads", "stuck": true, "prompt": "В пуле два потока, пришли пять задач. Куда деваются три лишние?", "answer": "Пул один, рабочих потоков в нём два. Первые две задачи занимают эти потоки. Остальные три стоят в очереди того же пула и стартуют, когда какой-то из двух потоков освободился. Отдельные пулы под них не создаются.\n\nКак увидеть: Пул один. Потоков в нём два. Три задачи стоят в очереди этого пула, а не в отдельных пулах. Очередь у fixed pool не ограничена жёстко, поэтому при всплеске растёт ожидание и память."}, {"id": "then-combine", "topic": "threads", "stuck": false, "prompt": "Зачем balance и owner запускать двумя supplyAsync и склеивать thenCombine?", "answer": "Вызовы независимы, поэтому их выполняют одновременно. thenCombine забирает оба результата, когда готовы и баланс, и владелец. Последовательное чтение заставило бы ждать владельца только после баланса.\n\nКак увидеть: supplyAsync сразу кладёт работу в пул и возвращает обещание. Оба обещания живут одновременно. thenCombine склеивает результаты, когда готовы оба, и не заставляет ждать владельца после баланса."}, {"id": "join", "topic": "threads", "stuck": false, "prompt": "Что делает join у CompletableFuture с потоком, который его вызвал?", "answer": "Блокирует этот поток, пока результат не готов. Это то же ожидание, что await у Promise или Thread#join в Ruby. Пока join ждёт, поток пула сервера занят.\n\nКак увидеть: Поток, который вызвал join, стоит и ничего другого не делает, пока результат не появится. Если это поток Tomcat, он занят ожиданием и не возьмёт следующий HTTP-запрос."}, {"id": "reachability", "topic": "gc", "stuck": true, "prompt": "createTemporary создал счёт Z и вернулся. main всё ещё держит счёт A в переменной kept. Кого может забрать сборщик?", "answer": "Z. Его единственная обычная ссылка temp лежала в кадре createTemporary, кадр уже выброшен. A держит kept в кадре main, путь от корня есть, его не трогают. В прогоне окошко на Z стало null, окошко на A показало A.\n\nКак увидеть: Корни — локальные переменные живых кадров и статические поля. temp умерла вместе с кадром, пути к Z нет. kept ещё в main, путь к A есть."}, {"id": "weak-window", "topic": "gc", "stuck": true, "prompt": "Зачем в примере сборки мусора было окошко WeakReference?", "answer": "Чтобы увидеть, жив объект или уже забран. Окошко само корнем не является и объект не удерживает. Обычные стрелки — это temp и kept. На интервью важна достижимость от кадров и статических полей, а не сам класс WeakReference.\n\nКак увидеть: Окошко нужно было только чтобы напечатать, забрали объект или нет. На интервью говорят про достижимость от стека и static, класс WeakReference можно не называть."}, {"id": "static-map", "topic": "gc", "stuck": false, "prompt": "Платёжные id складывают в статическую Map и не удаляют. Почему сборщик их не забирает?", "answer": "Статическое поле — корень. Пока запись лежит в этой Map, до неё есть путь, и сборщик обязан считать её живой. Так в Java выглядит утечка: объект не мусор, потому что ссылка всё ещё есть.\n\nКак увидеть: Утечка в Java часто выглядит так: объект жив, потому что до него есть путь от static. Сборщик не имеет права его забрать, пока id лежит в этой Map."}, {"id": "young-gen", "topic": "gc", "stuck": true, "prompt": "Куда попадает только что созданный объект и почему молодое поколение чистят чаще?", "answer": "Новый объект попадает в молодое поколение. Почти все объекты умирают сразу, поэтому короткая сборка этой области освобождает много места. Кто пережил несколько таких сборок, того переносят в старое поколение. Старое чистят реже.\n\nКак увидеть: Временные строки и объекты одного запроса умирают сразу, поэтому молодую область чистят часто и дёшево. Счета в кэше переживают несколько сборок и уезжают в старое поколение, его трогают реже."}, {"id": "class-init", "topic": "gc", "stuck": false, "prompt": "Когда выполнился static-блок Account и куда попало описание класса?", "answer": "При первом использовании, в прогоне на первом new Account, а не в момент входа в main. Методы и bytecode класса лежат в Metaspace. Сами объекты Account лежат в куче. По умолчанию кучу чистит G1, на время паузы потоки приложения стоят.\n\nКак увидеть: Пока класс не использовали, static-блок молчит. Первый new и загружает описание в Metaspace, и выполняет блок один раз. Сами new Account создают объекты уже в куче. По умолчанию кучу чистит G1."}];
+const KEY = "java-internals-known-v2";
+let mode = "all", topic = "all", index = 0, revealed = false;
+let known = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+const chips = document.getElementById("chips");
+chips.innerHTML = '<button type="button" data-topic="all" class="active">Все темы</button>' +
+  Object.entries(TOPIC).map(([value, label]) => `<button type="button" data-topic="${value}">${label}</button>`).join("");
+function save() { localStorage.setItem(KEY, JSON.stringify([...known])); }
+function filtered() {
+  return CARDS.filter(card => {
+    if (mode === "stuck" && !card.stuck) return false;
+    if (mode === "open" && known.has(card.id)) return false;
+    if (topic !== "all" && card.topic !== topic) return false;
+    return true;
+  });
+}
+function escapeHtml(value) {
+  return value.replace(/[&<>]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[ch]));
+}
+function answerBlocks(text) {
+  return text.split(/\n\n+/).map(part => {
+    if (part.startsWith("Как увидеть:")) {
+      return `<div class="note"><strong>Как увидеть</strong>${escapeHtml(part.slice("Как увидеть:".length).trim())}</div>`;
+    }
+    return `<p class="body">${escapeHtml(part)}</p>`;
+  }).join("");
+}
+function render() {
+  const list = filtered();
+  const knownCount = CARDS.filter(c => known.has(c.id)).length;
+  document.getElementById("fill").style.width = (CARDS.length ? (knownCount / CARDS.length * 100) : 0) + "%";
+  document.querySelectorAll("[data-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+  document.querySelectorAll("[data-topic]").forEach(btn => btn.classList.toggle("active", btn.dataset.topic === topic));
+  const root = document.getElementById("card");
+  if (!list.length) {
+    root.innerHTML = "<p class='empty'>В этом фильтре карточек нет. Выбери «Все» или сними «Ещё не помню».</p>";
+    document.getElementById("pos").textContent = "0";
+    return;
+  }
+  if (index >= list.length) index = 0;
+  const card = list[index];
+  document.getElementById("pos").textContent = `${index + 1} / ${list.length}`;
+  const flag = card.stuck ? "<span class='mark'>разбирали отдельно</span>" : "";
+  const knownMark = known.has(card.id) ? "<span class='mark'>помню</span>" : "";
+  const body = revealed
+    ? `<div class="answer">${answerBlocks(card.answer)}</div>`
+    : `<p class="cue">Закрой ответ в голове. Если можешь объяснить вслух, нажимай «Помню».</p>`;
+  root.innerHTML = `<div class="kicker">${escapeHtml(TOPIC[card.topic])}${flag}${knownMark}</div><h2>${escapeHtml(card.prompt)}</h2>${body}`;
+  document.getElementById("reveal").textContent = revealed ? "Скрыть ответ" : "Показать ответ";
+}
+function go(delta) {
+  const list = filtered();
+  if (!list.length) return;
+  index = (index + delta + list.length) % list.length;
+  revealed = false;
+  render();
+}
+document.getElementById("reveal").onclick = () => { revealed = !revealed; render(); };
+document.getElementById("yes").onclick = () => {
+  const list = filtered();
+  const card = list[index];
+  if (!card) return;
+  known.add(card.id); save(); revealed = false;
+  if (mode === "open") { if (index >= filtered().length) index = 0; render(); return; }
+  go(1);
+};
+document.getElementById("no").onclick = () => {
+  const card = filtered()[index];
+  if (!card) return;
+  known.delete(card.id); save(); go(1);
+};
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+document.getElementById("modes").onclick = (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn) return;
+  mode = btn.dataset.mode; index = 0; revealed = false; render();
+};
+chips.onclick = (event) => {
+  const btn = event.target.closest("[data-topic]");
+  if (!btn) return;
+  topic = btn.dataset.topic; index = 0; revealed = false; render();
+};
+render();
+</script>
+</body>
+</html>

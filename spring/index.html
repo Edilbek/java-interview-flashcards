@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spring</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f0e8;
+    --surface: #fffdf9;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --accent: #1e3a8a;
+    --accent-ink: #fff;
+    --soft: #e7eef8;
+    --note: #f6f1e7;
+    --note-ink: #44403c;
+    --good: #14532d;
+    --good-soft: #e8f6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141210;
+      --surface: #1f1c19;
+      --ink: #fafaf9;
+      --muted: #a8a29e;
+      --line: #44403c;
+      --accent: #bfdbfe;
+      --accent-ink: #172554;
+      --soft: #243044;
+      --note: #2a241c;
+      --note-ink: #e7e5e4;
+      --good: #bbf7d0;
+      --good-soft: #143024;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 140px; }
+  a { color: var(--accent); text-decoration: none; }
+  .back { font-size: 14px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .pos { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 8px 0 14px; font-size: 15px; }
+  .bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .seg, .chips { display: flex; gap: 8px; }
+  .seg { margin-bottom: 10px; }
+  .seg button, .chips button, .dock button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .seg button { flex: 1; min-height: 40px; padding: 8px 10px; }
+  .seg button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chips { overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chips button { flex: 0 0 auto; padding: 8px 12px; min-height: 36px; font-size: 14px; }
+  .chips button.active { background: var(--soft); border-color: var(--accent); color: var(--accent); }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px 20px; min-height: 320px; }
+  .kicker { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .mark { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--note); color: var(--note-ink); }
+  h2 { font-size: 24px; line-height: 1.35; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .cue { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  .answer { margin-top: 22px; display: grid; gap: 12px; }
+  .answer p { margin: 0; font-size: 17px; line-height: 1.55; }
+  .body { padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 12px 14px; }
+  .note strong { display: block; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .dock-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+  .dock button { border-radius: 12px; min-height: 48px; padding: 10px 8px; }
+  .dock .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .dock .good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">Все колоды</a>
+  <div class="head">
+    <h1>Spring</h1>
+    <div class="pos" id="pos">1 / 1</div>
+  </div>
+  <p class="lead">IoC, запрос, транзакции, Spring Data, логи и трейсы. Сначала сформулируй ответ сам.</p>
+  <div class="bar" aria-hidden="true"><span id="fill"></span></div>
+  <div class="seg" id="modes">
+    <button type="button" data-mode="all" class="active">Все</button>
+    <button type="button" data-mode="stuck">Где путался</button>
+    <button type="button" data-mode="open">Ещё не помню</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <article id="card"></article>
+</div>
+<div class="dock">
+  <div class="dock-inner">
+    <button type="button" id="prev">Назад</button>
+    <button type="button" class="primary" id="reveal">Показать ответ</button>
+    <button type="button" id="next">Дальше</button>
+    <div class="row2">
+      <button type="button" class="good" id="yes">Помню</button>
+      <button type="button" id="no">Ещё раз</button>
+    </div>
+  </div>
+</div>
+<script>
+const TOPIC = {"ioc": "Spring IoC", "boot": "Boot и запрос", "tx": "Транзакции", "data": "Spring Data", "observe": "Observability"};
+const CARDS = [{"id": "bean-vs-container", "topic": "ioc", "stuck": true, "prompt": "TransferService — это бин или контейнер? А ApplicationContext?", "answer": "TransferService — бин, один объект под управлением контейнера. ApplicationContext — сам контейнер. Он создаёт бины и передаёт один в конструктор другого. Второй контейнер он не создаёт.\n\nКак увидеть: Запомни картинку из двух бинов и одного контейнера: сначала репозиторий, потом сервис, репозиторий передан в конструктор сервиса. Контейнер при этом один."}, {"id": "who-news", "topic": "ioc", "stuck": false, "prompt": "Кто вызывает конструктор TransferService в приложении на Spring?", "answer": "Контейнер. Он сначала создаёт JdbcAccountRepository, потом TransferService и кладёт репозиторий в его конструктор. В учебном прогоне без Spring эти new писал main.\n\nКак увидеть: В логах и отладчике объект сервиса появляется при старте приложения, не на первый HTTP-запрос. Запрос только вызывает метод уже созданного бина."}, {"id": "why-constructor", "topic": "ioc", "stuck": false, "prompt": "Почему репозиторий передают в конструктор, а не создают через new внутри сервиса?", "answer": "Зависимость приходит снаружи. Сервис не привязан к одной строке new JdbcAccountRepository(). На это место можно передать другую реализацию, в тесте — заглушку без базы.\n\nКак увидеть: В тесте пишут new TransferService(new FakeAccounts(100_000)) и проверяют правило без базы. Если new JDBC стоит внутри сервиса, такую подмену сделать нельзя."}, {"id": "why-interface", "topic": "ioc", "stuck": false, "prompt": "Зачем конструктор принимает AccountRepository, а не JdbcAccountRepository?", "answer": "Сервис зависит от договора «умею отдать баланс», а не от JDBC. В тесте передают заглушку с фиксированным балансом. Конкретный класс годился бы только один.\n\nКак увидеть: Интерфейс — договор «дай баланс». JDBC, заглушка и позже другой способ хранения все его выполняют. Сервис видит только договор."}, {"id": "what-bean", "topic": "ioc", "stuck": true, "prompt": "Что такое бин?", "answer": "Один объект, которым управляет контейнер. TransferService — один бин, репозиторий — другой. Складом всех сервисов бин не является. Репозиторий лежит внутри сервиса только потому, что конструктор его попросил.\n\nКак увидеть: Не путай бин и контейнер. Бин — TransferService или репозиторий. Контейнер — ApplicationContext, он хранит бины. Поле accounts внутри сервиса — обычная ссылка, не «склад бинов»."}, {"id": "singleton-count", "topic": "ioc", "stuck": false, "prompt": "Пришло 1000 платежей. Сколько объектов TransferService создаст контейнер, если область видимости не указана?", "answer": "Один. По умолчанию бин singleton: один объект на весь ApplicationContext. Тысяча платежей вызывает методы того же экземпляра.\n\nКак увидеть: Область видимости не написана — значит singleton. Второй TransferService появится, только если поднять второй ApplicationContext, не от второй тысячи платежей."}, {"id": "no-request-field", "topic": "ioc", "stuck": false, "prompt": "Почему сумму текущего перевода не кладут в поле singleton-сервиса?", "answer": "Поле одно на все потоки. Два перевода затрут сумму друг друга, как в гонке balance++. Сумма и id счёта живут в аргументах метода и в локальных переменных. В полях оставляют зависимости, которые не меняются между запросами.\n\nКак увидеть: Поле сервиса общее для всех потоков Tomcat. Сумма перевода должна быть параметром метода. Иначе платёж A запишет 100, платёж B перезапишет 200, и оба увидят чужое."}, {"id": "post-construct-order", "topic": "ioc", "stuck": false, "prompt": "Что выполняется раньше: конструктор или @PostConstruct? Когда вызывается @PreDestroy?", "answer": "Сначала конструктор, зависимости уже переданы. Потом один раз @PostConstruct: прогреть кэш, проверить соединение. @PreDestroy вызывается при остановке контейнера, не в конце каждого платежа.\n\nКак увидеть: Конструктор только собирает объект. @PostConstruct уже может звать репозиторий. @PreDestroy — при остановке приложения, например чтобы закрыть то, что открыли на старте, не после каждого перевода."}, {"id": "what-post-construct", "topic": "ioc", "stuck": true, "prompt": "Что такое @PostConstruct?", "answer": "Пометка на методе, который контейнер вызывает один раз сразу после конструктора. Репозиторий уже лежит в поле. На каждый платёж этот метод не вызывается. Платёж идёт в обычный метод сервиса.\n\nКак увидеть: Если прогрев положить в конструктор, это тоже сработает при constructor injection, но @PostConstruct явно говорит: объект уже собран, можно начинать работу. На запрос клиента он не запускается."}, {"id": "boot-starts", "topic": "boot", "stuck": false, "prompt": "Что создаёт SpringApplication.run до того, как приложение отвечает на запросы?", "answer": "Контейнер ApplicationContext, бины и встроенный Tomcat, по умолчанию на порту 8080. Стартер spring-boot-starter-web приносит сервер и Jackson.\n\nКак увидеть: До run() нет ни бинов, ни порта 8080. После него приложение уже принимает HTTP. Стартер web кладёт на classpath Tomcat и Jackson, Boot поднимает их сам."}, {"id": "what-tomcat", "topic": "boot", "stuck": true, "prompt": "Что такое Tomcat в цепочке запроса?", "answer": "HTTP-сервер на месте Puma. Принимает соединение, берёт поток из пула и вызывает приложение по контракту Servlet. Про @RestController он не знает. Boot запускает его внутри того же процесса.\n\nКак увидеть: Аналогия: Puma принимает HTTP и отдаёт его в Rack. Tomcat принимает HTTP и отдаёт его в Servlet. DispatcherServlet — это servlet, который Spring зарегистрировал в Tomcat. Про контроллеры Tomcat не знает."}, {"id": "chain-names", "topic": "boot", "stuck": true, "prompt": "Назови цепочку Spring и соответствие Puma, Rack, middleware, routes.rb, before_action, Model, View.", "answer": "Tomcat → Servlet → Spring. Tomcat — Puma. Servlet — Rack. Filter chain — middleware. DispatcherServlet и @PostMapping — routes.rb. HandlerInterceptor — before_action. Service и Repository — Model. Jackson — View.\n\nКак увидеть: Держи одну строку: Tomcat → фильтры → DispatcherServlet → контроллер → сервис → репозиторий → Jackson → обратно через фильтры → Tomcat. Рядом имена Rails: Puma, middleware, routes, action, model, view."}, {"id": "request-body", "topic": "boot", "stuck": false, "prompt": "Откуда берётся аргумент request в методе create с @RequestBody?", "answer": "Из JSON тела POST /transfers. Jackson собирает из него объект TransferRequest. Кусок пути вроде /accounts/A в этот аргумент не попадает.\n\nКак увидеть: POST /transfers с JSON {\"from\":\"A\",\"to\":\"B\",\"amount\":10000} попадает в аргумент именно из-за @RequestBody. Без этой пометки Spring не станет разбирать тело в объект."}, {"id": "path-variable", "topic": "boot", "stuck": false, "prompt": "В GET /accounts/A откуда берётся строка \"A\"?", "answer": "Из пути. Шаблон /accounts/{id} и аргумент с @PathVariable. Это не тело запроса.\n\nКак увидеть: Шаблон /accounts/{id} и запрос /accounts/A. В аргумент id попадает A. Тело запроса тут ни при чём, его может не быть вовсе."}, {"id": "rule-in-service", "topic": "boot", "stuck": false, "prompt": "Почему правило «нельзя увести счёт в минус» пишут в TransferService, а не в контроллере?", "answer": "Контроллер достаёт данные запроса и вызывает сервис. Правило перевода и запись в базу живут в сервисе, там же @Transactional. Контроллер остаётся тонким.\n\nКак увидеть: Контроллер отвечает за HTTP: достать JSON и отдать статус. Правило денег и @Transactional живут в сервисе, чтобы то же правило можно было вызвать не только из этого URL."}, {"id": "rollback-runtime", "topic": "tx", "stuck": false, "prompt": "debit уже выполнился, credit бросил IllegalStateException. Что останется в базе по счёту A?", "answer": "Ничего от этого перевода. IllegalStateException — RuntimeException, обёртка делает rollback. Обе записи базы внутри метода откатываются. Объект в памяти сам назад не откатывается.\n\nКак увидеть: Откатываются INSERT и UPDATE этой транзакции. Если метод уже успел поменять поле Java-объекта в памяти, это поле само не откатится. База вернётся, объект в куче — нет."}, {"id": "what-wrapper", "topic": "tx", "stuck": true, "prompt": "Почему транзакцию открывает обёртка, а не код метода transfer?", "answer": "В методе написаны только debit и credit. @Transactional сообщает контейнеру, что вокруг вызова нужна транзакция. Контейнер не переписывает тело метода: снаружи лежит другой объект. Он открывает транзакцию, вызывает настоящий transfer, затем делает commit или rollback.\n\nКак увидеть: В исходнике transfer нет begin и commit. Их выполняет объект-обёртка, который контейнер подсовывает вместо сервиса. Контроллер вызывает обёртку, обёртка вызывает настоящий метод."}, {"id": "self-invocation", "topic": "tx", "stuck": true, "prompt": "Почему this.transfer(...) из другого метода того же класса не открывает транзакцию?", "answer": "Контроллер держит ссылку на обёртку. this внутри настоящего объекта указывает на сам объект, обёртка этот вызов не видит. Транзакцию включает только вызов снаружи, через бин.\n\nКак увидеть: this внутри сервиса указывает на настоящий объект, не на обёртку. Поэтому внутренний вызов this.transfer() не проходит через код, который открывает транзакцию."}, {"id": "checked-commit", "topic": "tx", "stuck": false, "prompt": "Метод с @Transactional бросил проверяемое исключение, rollbackFor не указан. Будет commit или rollback?", "answer": "Commit. По умолчанию откатывают RuntimeException и Error. Проверяемое исключение транзакцию не откатывает, пока не написан rollbackFor = Exception.class. Нехватку денег поэтому бросают как IllegalStateException.\n\nКак увидеть: Нехватка денег должна быть RuntimeException, тогда откат бесплатный. Проверяемое исключение без rollbackFor закончится commit, и списание останется, хотя метод «упал»."}, {"id": "where-transactional", "topic": "tx", "stuck": false, "prompt": "Куда ставят @Transactional и что означает all or nothing?", "answer": "На публичный метод сервиса, не на контроллер. Вызов снаружи — одна транзакция: commit всех записей базы внутри метода или rollback всех. Обёртка открывает её до входа в метод и закрывает после выхода.\n\nКак увидеть: Ставят на публичный метод сервиса, который вызывают снаружи. debit и credit внутри одного такого метода попадают в одну транзакцию: либо оба commit, либо оба rollback."}, {"id": "why-spring-data", "topic": "data", "stuck": true, "prompt": "Зачем Spring Data, если репозиторий можно написать классом с EntityManager?", "answer": "Класс с EntityManager приходится вести самому: каждый поиск — свой метод и текст запроса. Интерфейс, который расширяет JpaRepository, оставляет имя метода. Контейнер создаёт бин и сам выполняет SQL. Свой @Query пишут, когда имени мало, например для join fetch.\n\nКак увидеть: Ручной класс раздувается на каждый findBy... Spring Data оставляет строку в интерфейсе, а SQL и бин собирает сам. @Query пишут только когда имени метода мало, как для join fetch."}, {"id": "find-by-number", "topic": "data", "stuck": false, "prompt": "Кто пишет SQL для findByNumber?", "answer": "Spring Data. Имя метода читается как «поле number равно аргументу». Отдельного класса с текстом запроса нет. save приходит из JpaRepository и тоже уже реализован.\n\nКак увидеть: findByNumber(String number) становится условием WHERE number = ?. Свой класс с этим текстом не нужен. save, findById и delete уже есть у JpaRepository."}, {"id": "n-plus-one", "topic": "data", "stuck": false, "prompt": "findAll вернул 50 счетов, цикл вызывает getCards() у каждого. Сколько запросов уйдёт в базу?", "answer": "51. Один запрос за список счетов и по запросу карт на каждый счёт. @OneToMany по умолчанию ленивое: первое обращение к cards отправляет отдельный SELECT, пока сессия открыта.\n\nКак увидеть: 1 запрос на 50 счетов и ещё 50 на карты, итого 51. В логе Hibernate это выглядит как пачка одинаковых select от card where account_id = ?. В Rails это цикл по account.cards без includes."}, {"id": "join-fetch", "topic": "data", "stuck": false, "prompt": "Что меняет join fetch a.cards в цикле по счетам?", "answer": "Карты приезжают вместе со счетами в одном запросе. getCards() читает уже загруженный список и в базу больше не ходит. Это аналог includes в Rails.\n\nКак увидеть: После join fetch список cards уже заполнен в памяти объекта. size() в цикле не отправляет SQL. Без этого первое же обращение к ленивому полю открывает новый запрос."}, {"id": "why-not-eager", "topic": "data", "stuck": false, "prompt": "Почему не пометить cards как EAGER навсегда?", "answer": "Карты будут грузиться при каждой загрузке счёта, в том числе когда нужен только баланс. Ленивая связь остаётся обычной. Жадную подгрузку указывают в конкретном запросе через join fetch.\n\nКак увидеть: EAGER на OneToMany означает: любая загрузка счёта, даже ради одного баланса, тащит все карты. Страница баланса станет такой же тяжёлой, как страница карт. Жадность включают в конкретном запросе."}, {"id": "open-trace", "topic": "observe", "stuck": false, "prompt": "Клиент говорит, что перевод повис по таймауту. Что открыть: график p99, трейс этого запроса или строку лога без traceId?", "answer": "Трейс этого запроса. По отрезкам видно, какой шаг съел время: замок в базе, сервис или контроллер. p99 говорит про все переводы сразу. Строка без traceId не собирает путь этого прохода.\n\nКак увидеть: p99 скажет «вообще стало медленно», но не какой перевод. Лог без traceId — обрывок. Трейс по id этого запроса покажет, что время ушло на ожидание замка в базе, а не на JSON."}, {"id": "counter-no-id", "topic": "observe", "stuck": true, "prompt": "Счётчик ошибок вырос. Почему по нему нельзя найти перевод? Можно ли вместо traceId использовать paymentId?", "answer": "Счётчик — одно число, без id операций. paymentId и traceId туда не кладут: уникальный id на каждую точку ломает сбор метрик. paymentId — id перевода как операции, по нему ищут лог. traceId — id одного HTTP-запроса, по нему открывают трейс. Повтор может иметь тот же paymentId и новый traceId.\n\nКак увидеть: Метрика — число. paymentId в неё не кладут: иначе на каждый перевод будет свой ряд, и Prometheus раздуется. paymentId ищут в логе, traceId открывает трейс. Повтор перевода может сохранить paymentId и получить новый traceId."}, {"id": "log-fields", "topic": "observe", "stuck": true, "prompt": "Что положить в лог проведённого перевода и что не класть?", "answer": "Кладут paymentId, Idempotency-Key, id счетов, сумму в тыйынах и исход. Не кладут номер карты целиком, CVV и пароль. traceId в строку попадает из контекста запроса, его фильтр ставит в начале пути.\n\nКак увидеть: Мало одних id: без суммы и исхода по paymentId не восстановить, что произошло. Много лишнего вредно: полный номер карты и CVV в логе остаются навсегда. Кладёшь id операции, ключ идемпотентности, id счетов, сумму в тыйынах, исход."}, {"id": "trace-vs-log", "topic": "observe", "stuck": false, "prompt": "Чем трейс отличается от строки лога?", "answer": "Лог — одно событие: перевод проведён или отклонён. Трейс — шаги одного запроса под общим traceId: фильтр, контроллер, сервис, UPDATE в базе. Тревога смотрит на метрику, разбор одного платежа идёт по трейсу и логу.\n\nКак увидеть: Один перевод может оставить одну строку лога «проведён» и несколько отрезков трейса: HTTP, сервис, UPDATE. Строка говорит что случилось, трейс — где ушло время."}];
+const KEY = "spring-known-v2";
+let mode = "all", topic = "all", index = 0, revealed = false;
+let known = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+const chips = document.getElementById("chips");
+chips.innerHTML = '<button type="button" data-topic="all" class="active">Все темы</button>' +
+  Object.entries(TOPIC).map(([value, label]) => `<button type="button" data-topic="${value}">${label}</button>`).join("");
+function save() { localStorage.setItem(KEY, JSON.stringify([...known])); }
+function filtered() {
+  return CARDS.filter(card => {
+    if (mode === "stuck" && !card.stuck) return false;
+    if (mode === "open" && known.has(card.id)) return false;
+    if (topic !== "all" && card.topic !== topic) return false;
+    return true;
+  });
+}
+function escapeHtml(value) {
+  return value.replace(/[&<>]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[ch]));
+}
+function answerBlocks(text) {
+  return text.split(/\n\n+/).map(part => {
+    if (part.startsWith("Как увидеть:")) {
+      return `<div class="note"><strong>Как увидеть</strong>${escapeHtml(part.slice("Как увидеть:".length).trim())}</div>`;
+    }
+    return `<p class="body">${escapeHtml(part)}</p>`;
+  }).join("");
+}
+function render() {
+  const list = filtered();
+  const knownCount = CARDS.filter(c => known.has(c.id)).length;
+  document.getElementById("fill").style.width = (CARDS.length ? (knownCount / CARDS.length * 100) : 0) + "%";
+  document.querySelectorAll("[data-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+  document.querySelectorAll("[data-topic]").forEach(btn => btn.classList.toggle("active", btn.dataset.topic === topic));
+  const root = document.getElementById("card");
+  if (!list.length) {
+    root.innerHTML = "<p class='empty'>В этом фильтре карточек нет. Выбери «Все» или сними «Ещё не помню».</p>";
+    document.getElementById("pos").textContent = "0";
+    return;
+  }
+  if (index >= list.length) index = 0;
+  const card = list[index];
+  document.getElementById("pos").textContent = `${index + 1} / ${list.length}`;
+  const flag = card.stuck ? "<span class='mark'>разбирали отдельно</span>" : "";
+  const knownMark = known.has(card.id) ? "<span class='mark'>помню</span>" : "";
+  const body = revealed
+    ? `<div class="answer">${answerBlocks(card.answer)}</div>`
+    : `<p class="cue">Закрой ответ в голове. Если можешь объяснить вслух, нажимай «Помню».</p>`;
+  root.innerHTML = `<div class="kicker">${escapeHtml(TOPIC[card.topic])}${flag}${knownMark}</div><h2>${escapeHtml(card.prompt)}</h2>${body}`;
+  document.getElementById("reveal").textContent = revealed ? "Скрыть ответ" : "Показать ответ";
+}
+function go(delta) {
+  const list = filtered();
+  if (!list.length) return;
+  index = (index + delta + list.length) % list.length;
+  revealed = false;
+  render();
+}
+document.getElementById("reveal").onclick = () => { revealed = !revealed; render(); };
+document.getElementById("yes").onclick = () => {
+  const list = filtered();
+  const card = list[index];
+  if (!card) return;
+  known.add(card.id); save(); revealed = false;
+  if (mode === "open") { if (index >= filtered().length) index = 0; render(); return; }
+  go(1);
+};
+document.getElementById("no").onclick = () => {
+  const card = filtered()[index];
+  if (!card) return;
+  known.delete(card.id); save(); go(1);
+};
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+document.getElementById("modes").onclick = (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn) return;
+  mode = btn.dataset.mode; index = 0; revealed = false; render();
+};
+chips.onclick = (event) => {
+  const btn = event.target.closest("[data-topic]");
+  if (!btn) return;
+  topic = btn.dataset.topic; index = 0; revealed = false; render();
+};
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ООП</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f0e8;
+    --surface: #fffdf9;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --accent: #1e3a8a;
+    --accent-ink: #fff;
+    --soft: #e7eef8;
+    --note: #f6f1e7;
+    --note-ink: #44403c;
+    --good: #14532d;
+    --good-soft: #e8f6ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141210;
+      --surface: #1f1c19;
+      --ink: #fafaf9;
+      --muted: #a8a29e;
+      --line: #44403c;
+      --accent: #bfdbfe;
+      --accent-ink: #172554;
+      --soft: #243044;
+      --note: #2a241c;
+      --note-ink: #e7e5e4;
+      --good: #bbf7d0;
+      --good-soft: #143024;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 140px; }
+  a { color: var(--accent); text-decoration: none; }
+  .back { font-size: 14px; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+  h1 { font-size: 28px; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  .pos { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .lead { color: var(--muted); margin: 8px 0 14px; font-size: 15px; }
+  .bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .seg, .chips { display: flex; gap: 8px; }
+  .seg { margin-bottom: 10px; }
+  .seg button, .chips button, .dock button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
+  .seg button { flex: 1; min-height: 40px; padding: 8px 10px; }
+  .seg button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chips { overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+  .chips button { flex: 0 0 auto; padding: 8px 12px; min-height: 36px; font-size: 14px; }
+  .chips button.active { background: var(--soft); border-color: var(--accent); color: var(--accent); }
+  article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px 20px; min-height: 320px; }
+  .kicker { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .mark { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--note); color: var(--note-ink); }
+  h2 { font-size: 24px; line-height: 1.35; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .cue { margin: 22px 0 0; color: var(--muted); font-size: 15px; }
+  .answer { margin-top: 22px; display: grid; gap: 12px; }
+  .answer p { margin: 0; font-size: 17px; line-height: 1.55; }
+  .body { padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { background: var(--note); color: var(--note-ink); border-radius: 12px; padding: 12px 14px; }
+  .note strong { display: block; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .dock-inner { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; }
+  .dock button { border-radius: 12px; min-height: 48px; padding: 10px 8px; }
+  .dock .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+  .dock .good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">Все колоды</a>
+  <div class="head">
+    <h1>ООП</h1>
+    <div class="pos" id="pos">1 / 1</div>
+  </div>
+  <p class="lead">Инкапсуляция, наследование, композиция и полиморфизм. Сначала сформулируй ответ сам.</p>
+  <div class="bar" aria-hidden="true"><span id="fill"></span></div>
+  <div class="seg" id="modes">
+    <button type="button" data-mode="all" class="active">Все</button>
+    <button type="button" data-mode="stuck">Где путался</button>
+    <button type="button" data-mode="open">Ещё не помню</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <article id="card"></article>
+</div>
+<div class="dock">
+  <div class="dock-inner">
+    <button type="button" id="prev">Назад</button>
+    <button type="button" class="primary" id="reveal">Показать ответ</button>
+    <button type="button" id="next">Дальше</button>
+    <div class="row2">
+      <button type="button" class="good" id="yes">Помню</button>
+      <button type="button" id="no">Ещё раз</button>
+    </div>
+  </div>
+</div>
+<script>
+const TOPIC = {"encapsulation": "Инкапсуляция", "inheritance": "Наследование", "polymorphism": "Полиморфизм", "abstraction": "Абстракция"};
+const CARDS = [{"id": "encapsulation", "topic": "encapsulation", "stuck": false, "prompt": "Что такое инкапсуляция на примере счёта?", "answer": "Поле balanceTyiyn закрыто private. Снаружи нельзя написать account.balanceTyiyn = -1. Баланс меняется только через debit и credit, и там же проверяется, что денег хватает. Инвариант «баланс не отрицательный» живёт в одном месте, а не в каждом вызывающем коде.\n\nКак увидеть: Снаружи остаётся debit(100), внутри проверка и запись поля. Вызывающий не может обойти проверку, потому что поля не видно. Инвариант живёт рядом с данными."}, {"id": "why-private", "topic": "encapsulation", "stuck": false, "prompt": "Почему публичное поле хуже метода, даже если метод просто возвращает значение?", "answer": "Публичное поле позволяет любому коду записать что угодно и обойти проверку. Метод можно позже дополнить проверкой, журналом или ленивой загрузкой, и вызывающие места не переписывают. Поле, которое уже торчит наружу, так закрыть труднее: чужой код уже пишет в него напрямую.\n\nКак увидеть: Сегодня геттер просто возвращает поле. Завтра он может отдать баланс из журнала. Если поле уже public, чужой код пишет в него напрямую, и эту подмену сделать нельзя."}, {"id": "inheritance", "topic": "inheritance", "stuck": false, "prompt": "Что класс получает через extends?", "answer": "Наследник получает поля и методы родителя и может добавить свои или заменить метод родителя. Отношение читается как «является»: SpecialAccount является Account. Вызов метода, который наследник не переопределил, выполняет тело родителя.\n\nКак увидеть: extends копирует договор «я тоже Account». Что не переопределено, выполняется как у родителя. Переопределённый debit наследника подменит поведение только у объектов наследника."}, {"id": "is-a-has-a", "topic": "inheritance", "stuck": false, "prompt": "Когда наследование, а когда поле с другим объектом?", "answer": "Наследование — «является». Поле — «содержит». TransferService содержит репозиторий, он не является репозиторием, поэтому не пишут extends AccountRepository, если речь о классе сервиса. Репозиторий хранят полем и получают в конструкторе. Неверное «является» потом мешает подставить другой класс.\n\nКак увидеть: Проверка фразой: «сервис является репозиторием?» Нет, он им пользуется. Значит поле, не extends. «Специальный счёт является счётом?» Да, тогда extends уместен."}, {"id": "composition", "topic": "inheritance", "stuck": false, "prompt": "Что такое композиция в TransferService?", "answer": "Сервис держит внутри себя готовую зависимость, AccountRepository, и делегирует ей работу с базой. Поведение сбора перевода остаётся у сервиса, доступ к строкам — у репозитория. Заменить JDBC-репозиторий на заглушку можно, не плодя наследника сервиса.\n\nКак увидеть: Сервис не наследует репозиторий, а держит его и просит сделать работу. Заглушку подсовывают в конструктор. Наследование сервиса ради «другого способа сохранить» обычно хуже этой замены."}, {"id": "polymorphism", "topic": "polymorphism", "stuck": false, "prompt": "Где здесь полиморфизм: AccountRepository accounts = new JdbcAccountRepository()?", "answer": "Тип переменной — интерфейс, фактический объект — класс JDBC. Вызов accounts.balance(\"A\") выполняет метод того объекта, который реально лежит в куче. Завтра в ту же переменную можно положить заглушку, строка вызова не изменится. Это и есть подстановка разных форм под одним договором.\n\nКак увидеть: Строка accounts.balance(\"A\") одна. Объект за переменной может быть JDBC или заглушкой. Какой метод выполнится, решает объект в куче, не текст переменной."}, {"id": "dispatch", "topic": "polymorphism", "stuck": false, "prompt": "По чему выбирается тело метода при override: по типу переменной в тексте или по объекту?", "answer": "По фактическому объекту в куче. Переменная может быть объявлена как Account, а указывать на SpecialAccount. Вызов debit пойдёт в debit наследника, если он его переопределил. Компилятор лишь проверяет, что такой метод у объявленного типа есть.\n\nКак увидеть: Компилятор проверяет, что у типа переменной метод есть. Тело выбирается в рантайме по классу объекта. Поэтому SpecialAccount в переменной Account всё равно попадёт в свой debit."}, {"id": "abstraction", "topic": "abstraction", "stuck": false, "prompt": "Что спрятано за интерфейсом AccountRepository?", "answer": "Способ достать баланс: JDBC, заглушка или что-то ещё. Вызывающий код видит метод balance и не знает про SQL. Абстракция здесь — договор без лишних деталей. Прятать стоит то, что может меняться отдельно от правила перевода.\n\nКак увидеть: Сервис не должен знать текст SQL, чтобы провести перевод. Интерфейс оставляет ему balance и debit. Меняется способ хранения — меняется класс за интерфейсом, не правило денег."}, {"id": "abstract-vs-iface", "topic": "abstraction", "stuck": false, "prompt": "Когда общая база — абстрактный класс, а когда интерфейс?", "answer": "Абстрактный класс уместен, если наследникам нужны общие поля и уже написанные методы, и родитель заведомо один. Интерфейс уместен как договор без состояния, и таких договоров у класса может быть несколько. Счёт с общим куском поведения ближе к абстрактному классу. «Умею сохранять» и «умею считать комиссию» — два интерфейса.\n\nКак увидеть: Общие поля и уже написанный кусок алгоритма — абстрактный класс, родитель один. Способность «сохранять» или «считать комиссию» — интерфейс, их навешивают несколько. Не надо делать абстрактный класс ради одного метода без полей."}, {"id": "one-extends", "topic": "inheritance", "stuck": false, "prompt": "Сколько классов можно указать в extends и сколько интерфейсов в implements?", "answer": "Класс наследует ровно один класс. Если extends не написан, родитель — Object. Интерфейсов в implements может быть несколько. Поэтому общее поведение с полей часто кладут в один родительский класс, а дополнительные договоры набирают интерфейсами.\n\nКак увидеть: Вторая попытка extends не компилируется. Несколько ролей набирают через implements. Если кажется, что нужны два родителя, чаще это две способности-интерфейса или композиция."}, {"id": "override-safety", "topic": "polymorphism", "stuck": false, "prompt": "Что сломается, если в наследнике ошибиться в типе параметра и не поставить @Override?", "answer": "Получится перегрузка, новый метод, а не замена старого. Вызов с прежним типом аргумента пойдёт в метод родителя. Поведение, которого ждали от наследника, молча не включится. @Override в этом случае не компилируется и показывает, что заменять нечего.\n\nКак увидеть: Параметр long вместо Long — уже другой метод. Вызовы со старым типом родителя не попадут в новый. @Override превращает эту опечатку в ошибку компиляции."}, {"id": "super-call", "topic": "inheritance", "stuck": false, "prompt": "Куда попадают super.debit(amount) и super(id) в конструкторе?", "answer": "super.debit вызывает тело метода родителя, даже если наследник свой debit уже написал. super(id) вызывает конструктор родителя и обязан быть первой строкой конструктора наследника. Так родитель успевает заполнить свои поля до кода наследника.\n\nКак увидеть: super(id) обязателен первой строкой, если у родителя нет конструктора без аргументов: родитель должен заполнить свои поля раньше тела наследника. super.debit нужен, когда наследник хочет добавить шаг вокруг старого поведения, а не выкинуть его."}, {"id": "cohesion", "topic": "encapsulation", "stuck": false, "prompt": "Что значит, что у класса высокая связность?", "answer": "Его поля и методы про одну задачу. TransferService проводит перевод. Сборка текста СМС и разбор HTTP — другие задачи, им место в других классах. Класс, в котором лежит и баланс, и отправка почты, и формат JSON, меняют по разным причинам и читают целиком ради любой правки.\n\nКак увидеть: Открой класс и спроси, одной ли фразой описывается его работа. «Проводит перевод» — да. «Проводит перевод, шлёт СМС и пишет HTTP» — три фразы, три класса."}, {"id": "coupling", "topic": "abstraction", "stuck": false, "prompt": "Какая связь слабее: сервис знает JdbcAccountRepository или только AccountRepository?", "answer": "Слабее связь с интерфейсом. Сервис тогда не зависит от SQL, транзакций JDBC и конкретного класса. Его можно собрать с заглушкой. Знание конкретного JdbcAccountRepository тянет за собой детали базы в правило перевода.\n\nКак увидеть: Чем больше имён JDBC внутри сервиса, тем больнее менять базу и тем тяжелее тест. Импорт интерфейса вместо конкретного класса как раз уменьшает эту связь."}, {"id": "behavior-near-data", "topic": "encapsulation", "stuck": false, "prompt": "Почему проверку «денег хватает» кладут в Account.debit, а не копируют в каждый сервис?", "answer": "Рядом с полем баланса. Иначе каждый новый сценарий списания рискует забыть проверку и записать отрицательный баланс. Сервис перевода решает, какой перевод провести, и вызывает debit. Правило самого счёта остаётся на счёте.\n\nКак увидеть: Если проверку баланса скопировать в три сервиса, четвёртый забудет. Account.debit держит проверку один раз. Сервисы вызывают его и не повторяют if (balance < amount)."}];
+const KEY = "oop-known-v2";
+let mode = "all", topic = "all", index = 0, revealed = false;
+let known = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+const chips = document.getElementById("chips");
+chips.innerHTML = '<button type="button" data-topic="all" class="active">Все темы</button>' +
+  Object.entries(TOPIC).map(([value, label]) => `<button type="button" data-topic="${value}">${label}</button>`).join("");
+function save() { localStorage.setItem(KEY, JSON.stringify([...known])); }
+function filtered() {
+  return CARDS.filter(card => {
+    if (mode === "stuck" && !card.stuck) return false;
+    if (mode === "open" && known.has(card.id)) return false;
+    if (topic !== "all" && card.topic !== topic) return false;
+    return true;
+  });
+}
+function escapeHtml(value) {
+  return value.replace(/[&<>]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[ch]));
+}
+function answerBlocks(text) {
+  return text.split(/\n\n+/).map(part => {
+    if (part.startsWith("Как увидеть:")) {
+      return `<div class="note"><strong>Как увидеть</strong>${escapeHtml(part.slice("Как увидеть:".length).trim())}</div>`;
+    }
+    return `<p class="body">${escapeHtml(part)}</p>`;
+  }).join("");
+}
+function render() {
+  const list = filtered();
+  const knownCount = CARDS.filter(c => known.has(c.id)).length;
+  document.getElementById("fill").style.width = (CARDS.length ? (knownCount / CARDS.length * 100) : 0) + "%";
+  document.querySelectorAll("[data-mode]").forEach(btn => btn.classList.toggle("active", btn.dataset.mode === mode));
+  document.querySelectorAll("[data-topic]").forEach(btn => btn.classList.toggle("active", btn.dataset.topic === topic));
+  const root = document.getElementById("card");
+  if (!list.length) {
+    root.innerHTML = "<p class='empty'>В этом фильтре карточек нет. Выбери «Все» или сними «Ещё не помню».</p>";
+    document.getElementById("pos").textContent = "0";
+    return;
+  }
+  if (index >= list.length) index = 0;
+  const card = list[index];
+  document.getElementById("pos").textContent = `${index + 1} / ${list.length}`;
+  const flag = card.stuck ? "<span class='mark'>разбирали отдельно</span>" : "";
+  const knownMark = known.has(card.id) ? "<span class='mark'>помню</span>" : "";
+  const body = revealed
+    ? `<div class="answer">${answerBlocks(card.answer)}</div>`
+    : `<p class="cue">Закрой ответ в голове. Если можешь объяснить вслух, нажимай «Помню».</p>`;
+  root.innerHTML = `<div class="kicker">${escapeHtml(TOPIC[card.topic])}${flag}${knownMark}</div><h2>${escapeHtml(card.prompt)}</h2>${body}`;
+  document.getElementById("reveal").textContent = revealed ? "Скрыть ответ" : "Показать ответ";
+}
+function go(delta) {
+  const list = filtered();
+  if (!list.length) return;
+  index = (index + delta + list.length) % list.length;
+  revealed = false;
+  render();
+}
+document.getElementById("reveal").onclick = () => { revealed = !revealed; render(); };
+document.getElementById("yes").onclick = () => {
+  const list = filtered();
+  const card = list[index];
+  if (!card) return;
+  known.add(card.id); save(); revealed = false;
+  if (mode === "open") { if (index >= filtered().length) index = 0; render(); return; }
+  go(1);
+};
+document.getElementById("no").onclick = () => {
+  const card = filtered()[index];
+  if (!card) return;
+  known.delete(card.id); save(); go(1);
+};
+document.getElementById("prev").onclick = () => go(-1);
+document.getElementById("next").onclick = () => go(1);
+document.getElementById("modes").onclick = (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn) return;
+  mode = btn.dataset.mode; index = 0; revealed = false; render();
+};
+chips.onclick = (event) => {
+  const btn = event.target.closest("[data-topic]");
+  if (!btn) return;
+  topic = btn.dataset.topic; index = 0; revealed = false; render();
+};
+render();
+</script>
+</body>
+</html>
